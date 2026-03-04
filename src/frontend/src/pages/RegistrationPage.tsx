@@ -31,12 +31,12 @@ import {
 type RegistrationStep = "choose" | "professional-form";
 
 const ALL_CATEGORIES = [
-  ServiceCategory.cleaning,
-  ServiceCategory.plumbing,
-  ServiceCategory.electrician,
-  ServiceCategory.carpentry,
-  ServiceCategory.painting,
-  ServiceCategory.acRepair,
+  ServiceCategory.laptopRepair,
+  ServiceCategory.desktopRepair,
+  ServiceCategory.computerSales,
+  ServiceCategory.accessoriesSales,
+  ServiceCategory.networkSetup,
+  ServiceCategory.dataRecovery,
 ];
 
 export function RegistrationPage() {
@@ -105,7 +105,7 @@ export function RegistrationPage() {
               <Wrench className="w-7 h-7 text-primary" />
             </div>
             <h1 className="font-display text-3xl font-black text-foreground mb-2">
-              Welcome to ServeLocal
+              Welcome to TechServe
             </h1>
             <p className="text-muted-foreground">
               Let us know how you'd like to use the platform
@@ -143,7 +143,7 @@ export function RegistrationPage() {
                         I'm a Customer
                       </div>
                       <div className="text-sm text-muted-foreground mt-0.5">
-                        Browse services and book professionals for your home
+                        Browse computer services and book certified technicians
                       </div>
                     </div>
                   </div>
@@ -162,10 +162,10 @@ export function RegistrationPage() {
                     </div>
                     <div>
                       <div className="font-display font-bold text-lg text-foreground">
-                        I'm a Professional
+                        I'm a Technician / IT Specialist
                       </div>
                       <div className="text-sm text-muted-foreground mt-0.5">
-                        Offer your services and manage bookings on the platform
+                        Offer computer repair & IT services and manage bookings
                       </div>
                     </div>
                   </div>
@@ -192,10 +192,10 @@ export function RegistrationPage() {
                   </button>
                   <div>
                     <h2 className="font-display font-bold text-lg text-foreground">
-                      Professional Setup
+                      Technician Setup
                     </h2>
                     <p className="text-xs text-muted-foreground">
-                      Tell us about yourself
+                      Tell us about your specialization
                     </p>
                   </div>
                 </div>
@@ -244,7 +244,7 @@ export function RegistrationPage() {
                       data-ocid="registration.category_select"
                       className={errors.category ? "border-destructive" : ""}
                     >
-                      <SelectValue placeholder="Select your specialty" />
+                      <SelectValue placeholder="Select your tech specialty" />
                     </SelectTrigger>
                     <SelectContent>
                       {ALL_CATEGORIES.map((cat) => (

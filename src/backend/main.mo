@@ -1,21 +1,23 @@
+import Map "mo:core/Map";
+import List "mo:core/List";
+import Time "mo:core/Time";
 import Principal "mo:core/Principal";
 import Runtime "mo:core/Runtime";
-import List "mo:core/List";
-import Map "mo:core/Map";
-import Time "mo:core/Time";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
+import Migration "migration";
 
+(with migration = Migration.run)
 actor {
   public type UserRole = AccessControl.UserRole;
 
   public type ServiceCategory = {
-    #cleaning;
-    #plumbing;
-    #electrician;
-    #carpentry;
-    #painting;
-    #acRepair;
+    #laptopRepair;
+    #desktopRepair;
+    #computerSales;
+    #accessoriesSales;
+    #networkSetup;
+    #dataRecovery;
   };
 
   public type Service = {
@@ -62,6 +64,7 @@ actor {
     totalProfessionals : Nat;
     totalBookings : Nat;
     totalCompletedBookings : Nat;
+    totalRevenue : Nat;
   };
 
   let accessControlState = AccessControl.initState();
@@ -96,6 +99,19 @@ actor {
       };
     };
     count;
+  };
+
+  func getTotalRevenue() : Nat {
+    var total = 0;
+    for ((_, booking) in bookings.entries()) {
+      if (booking.status == #completed) {
+        switch (services.get(booking.serviceId)) {
+          case (?service) { total += service.maxPrice };
+          case (null) {};
+        };
+      };
+    };
+    total;
   };
 
   // User Profile Management (Required by Frontend)
@@ -409,6 +425,7 @@ actor {
       totalProfessionals = getTotalProfessionals();
       totalBookings = bookings.size();
       totalCompletedBookings = getTotalCompletedBookings();
+      totalRevenue = getTotalRevenue();
     };
   };
 
@@ -423,51 +440,99 @@ actor {
     let initialServices : [Service] = [
       {
         id = 1;
-        name = "Home Cleaning";
-        description = "Complete house cleaning services";
-        category = #cleaning;
-        minPrice = 100;
-        maxPrice = 300;
+        name = "Laptop Screen Repair";
+        description = "Fix broken laptop screens";
+        category = #laptopRepair;
+        minPrice = 5000;
+        maxPrice = 15000;
       },
       {
         id = 2;
-        name = "Plumbing Fix";
-        description = "Leak repairs and installations";
-        category = #plumbing;
-        minPrice = 150;
-        maxPrice = 500;
+        name = "Laptop Battery Replacement";
+        description = "Replace laptop batteries";
+        category = #laptopRepair;
+        minPrice = 2000;
+        maxPrice = 6000;
       },
       {
         id = 3;
-        name = "Electrical Repairs";
-        description = "Wiring and appliance repairs";
-        category = #electrician;
-        minPrice = 200;
-        maxPrice = 600;
+        name = "Desktop Power Supply Replacement";
+        description = "Replace desktop power supplies";
+        category = #desktopRepair;
+        minPrice = 5000;
+        maxPrice = 15000;
       },
       {
         id = 4;
-        name = "Carpentry Work";
-        description = "Furniture repairs and custom builds";
-        category = #carpentry;
-        minPrice = 250;
-        maxPrice = 800;
+        name = "Desktop Motherboard Repair";
+        description = "Repair desktop motherboards";
+        category = #desktopRepair;
+        minPrice = 10000;
+        maxPrice = 30000;
       },
       {
         id = 5;
-        name = "Interior Painting";
-        description = "Wall painting services";
-        category = #painting;
-        minPrice = 300;
-        maxPrice = 1000;
+        name = "New Laptop Sales";
+        description = "Sell new laptops";
+        category = #computerSales;
+        minPrice = 30000;
+        maxPrice = 100000;
       },
       {
         id = 6;
-        name = "AC Maintenance";
-        description = "Air conditioning repairs and servicing";
-        category = #acRepair;
-        minPrice = 400;
-        maxPrice = 1500;
+        name = "New Desktop Sales";
+        description = "Sell new desktops";
+        category = #computerSales;
+        minPrice = 25000;
+        maxPrice = 80000;
+      },
+      {
+        id = 7;
+        name = "Laptop Bags";
+        description = "Offer laptop bags and sleeves";
+        category = #accessoriesSales;
+        minPrice = 500;
+        maxPrice = 2000;
+      },
+      {
+        id = 8;
+        name = "USB Drives";
+        description = "Sell USB flash drives";
+        category = #accessoriesSales;
+        minPrice = 200;
+        maxPrice = 1000;
+      },
+      {
+        id = 9;
+        name = "WiFi Router Setup";
+        description = "Set up home WiFi routers";
+        category = #networkSetup;
+        minPrice = 2000;
+        maxPrice = 5000;
+      },
+      {
+        id = 10;
+        name = "LAN Cabling";
+        description = "Install LAN cables";
+        category = #networkSetup;
+        minPrice = 1000;
+        maxPrice = 4000;
+      },
+      {
+        id = 11;
+        name = "Data Recovery";
+        description = "Recover lost data";
+        category = #dataRecovery;
+        minPrice = 5000;
+        maxPrice = 20000;
+      },
+      {
+        id = 12;
+        name = "Virus Removal";
+        description = "Remove viruses and malware";
+        category = #dataRecovery;
+        minPrice = 2000;
+        maxPrice = 8000;
       },
     ];
 
@@ -475,7 +540,7 @@ actor {
       services.add(service.id, service);
     };
 
-    nextServiceId := 7;
+    nextServiceId := 13;
     isInitialized := true;
   };
 };

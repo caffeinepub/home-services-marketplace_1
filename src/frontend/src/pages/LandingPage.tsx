@@ -3,94 +3,95 @@ import { useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight,
   Clock,
-  Droplets,
-  Hammer,
-  Paintbrush,
-  Shield,
-  SprayCanIcon as SprayCan,
+  HardDrive,
+  Laptop,
+  Monitor,
+  Mouse,
+  ShieldCheck,
+  ShoppingCart,
   Star,
-  Wind,
-  Zap,
+  Wifi,
+  Wrench,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { ServiceCategory } from "../backend.d";
 
 const categories = [
   {
-    label: "Cleaning",
-    icon: SprayCan,
-    category: ServiceCategory.cleaning,
-    color: "oklch(0.92 0.07 145)",
-    iconColor: "oklch(0.38 0.14 145)",
-    description: "Deep cleaning & sanitization",
-  },
-  {
-    label: "Plumbing",
-    icon: Droplets,
-    category: ServiceCategory.plumbing,
-    color: "oklch(0.92 0.06 220)",
+    label: "Laptop Repair",
+    icon: Laptop,
+    category: ServiceCategory.laptopRepair,
+    color: "oklch(0.92 0.07 220)",
     iconColor: "oklch(0.38 0.15 220)",
-    description: "Leaks, pipes & installations",
+    description: "Screen, battery & keyboard fixes",
   },
   {
-    label: "Electrician",
-    icon: Zap,
-    category: ServiceCategory.electrician,
-    color: "oklch(0.95 0.08 80)",
-    iconColor: "oklch(0.45 0.14 80)",
-    description: "Wiring, repairs & fitting",
+    label: "Desktop Repair",
+    icon: Monitor,
+    category: ServiceCategory.desktopRepair,
+    color: "oklch(0.92 0.06 260)",
+    iconColor: "oklch(0.38 0.14 260)",
+    description: "Diagnostics & hardware upgrades",
   },
   {
-    label: "Carpentry",
-    icon: Hammer,
-    category: ServiceCategory.carpentry,
+    label: "Computer Sales",
+    icon: ShoppingCart,
+    category: ServiceCategory.computerSales,
+    color: "oklch(0.92 0.07 170)",
+    iconColor: "oklch(0.38 0.14 170)",
+    description: "Refurbished & custom-built PCs",
+  },
+  {
+    label: "Accessories",
+    icon: Mouse,
+    category: ServiceCategory.accessoriesSales,
     color: "oklch(0.94 0.07 55)",
     iconColor: "oklch(0.42 0.14 55)",
-    description: "Furniture, doors & woodwork",
+    description: "Monitors, keyboards & more",
   },
   {
-    label: "Painting",
-    icon: Paintbrush,
-    category: ServiceCategory.painting,
-    color: "oklch(0.92 0.06 290)",
-    iconColor: "oklch(0.38 0.15 290)",
-    description: "Interior & exterior painting",
+    label: "Network Setup",
+    icon: Wifi,
+    category: ServiceCategory.networkSetup,
+    color: "oklch(0.92 0.06 195)",
+    iconColor: "oklch(0.38 0.14 195)",
+    description: "Home & office Wi-Fi solutions",
   },
   {
-    label: "AC Repair",
-    icon: Wind,
-    category: ServiceCategory.acRepair,
-    color: "oklch(0.92 0.07 190)",
-    iconColor: "oklch(0.38 0.14 190)",
-    description: "Service, repair & installation",
+    label: "Data Recovery",
+    icon: HardDrive,
+    category: ServiceCategory.dataRecovery,
+    color: "oklch(0.92 0.06 30)",
+    iconColor: "oklch(0.38 0.15 30)",
+    description: "HDD, SSD & USB recovery",
   },
 ];
 
 const stats = [
   { value: "10,000+", label: "Happy Customers" },
-  { value: "500+", label: "Verified Professionals" },
-  { value: "4.8★", label: "Average Rating" },
-  { value: "24/7", label: "Support Available" },
+  { value: "200+", label: "Certified Technicians" },
+  { value: "4.9★", label: "Average Rating" },
+  { value: "Same Day", label: "Same-Day Service" },
 ];
 
 const features = [
   {
-    icon: Shield,
-    title: "Verified Professionals",
+    icon: ShieldCheck,
+    title: "Certified Technicians",
     description:
-      "Every service provider is background-checked, trained, and insured for your peace of mind.",
+      "All technicians are trained and certified. We vet every professional before they join our platform.",
   },
   {
     icon: Clock,
-    title: "On-Time Guarantee",
+    title: "Fast Turnaround",
     description:
-      "We respect your time. Professionals arrive at your scheduled slot or we offer a discount.",
+      "Most repairs are completed same day or next day. We know how important your device is to you.",
   },
   {
-    icon: Star,
-    title: "Quality Assured",
+    icon: Wrench,
+    title: "Warranty on Repairs",
     description:
-      "Not happy with the service? We'll send another professional at no extra charge.",
+      "All repairs come with a 90-day parts & labor warranty. If it breaks again, we fix it for free.",
   },
 ];
 
@@ -125,11 +126,11 @@ export function LandingPage() {
             >
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/20 border border-primary/30 text-sm font-medium text-primary">
                 <Star className="w-3.5 h-3.5" />
-                <span>Trusted by 10,000+ homeowners</span>
+                <span>Trusted by 10,000+ customers</span>
               </div>
 
               <h1 className="font-display text-5xl md:text-6xl font-black text-white leading-[1.05] tracking-tight">
-                Home services,{" "}
+                Computer services,{" "}
                 <span
                   className="relative"
                   style={{ color: "oklch(0.75 0.18 170)" }}
@@ -139,13 +140,14 @@ export function LandingPage() {
               </h1>
 
               <p className="text-lg text-white/70 leading-relaxed max-w-md">
-                Book trusted professionals for cleaning, plumbing, electrical
-                work, and more. Transparent pricing, no surprises.
+                Book certified technicians for laptop repair, desktop servicing,
+                data recovery, and more. Transparent pricing, no surprises.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button
                   size="lg"
+                  data-ocid="landing.browse_services_button"
                   onClick={() => void navigate({ to: "/services" })}
                   className="gap-2 shadow-primary text-base font-semibold"
                   style={{
@@ -167,8 +169,8 @@ export function LandingPage() {
             >
               <div className="relative rounded-2xl overflow-hidden shadow-2xl">
                 <img
-                  src="/assets/generated/hero-home-services.dim_1200x700.jpg"
-                  alt="Professional home services"
+                  src="/assets/generated/hero-computer-services.dim_1200x700.jpg"
+                  alt="Professional computer repair and sales services"
                   className="w-full h-80 object-cover"
                 />
                 {/* Floating stats card */}
@@ -181,7 +183,7 @@ export function LandingPage() {
                       4.9 / 5.0 Rating
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      From 5,200+ reviews
+                      From 8,400+ reviews
                     </div>
                   </div>
                 </div>
@@ -229,7 +231,7 @@ export function LandingPage() {
               What do you need today?
             </h2>
             <p className="text-muted-foreground text-lg">
-              Choose from 6 service categories, all with verified professionals
+              Choose from 6 computer & tech service categories
             </p>
           </motion.div>
 
@@ -246,6 +248,7 @@ export function LandingPage() {
                   whileHover={{ y: -4 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => handleCategoryClick(cat.category)}
+                  data-ocid={`landing.category.button.${i + 1}`}
                   className="group flex flex-col items-center gap-3 p-5 rounded-2xl border border-border bg-card text-left cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   style={{
                     boxShadow: "0 2px 8px oklch(0.13 0.02 260 / 0.06)",
@@ -286,7 +289,7 @@ export function LandingPage() {
             className="text-center mb-12"
           >
             <h2 className="font-display text-4xl font-black text-foreground mb-3">
-              Why homeowners choose us
+              Why customers choose us
             </h2>
           </motion.div>
 
@@ -331,14 +334,15 @@ export function LandingPage() {
             className="max-w-2xl mx-auto space-y-6"
           >
             <h2 className="font-display text-4xl font-black text-white">
-              Ready to get started?
+              Ready to fix your tech?
             </h2>
             <p className="text-white/70 text-lg">
-              Book your first service in under 2 minutes. Transparent pricing,
-              no hidden fees.
+              Book a technician in under 2 minutes. Transparent pricing, no
+              hidden fees.
             </p>
             <Button
               size="lg"
+              data-ocid="landing.cta_button"
               onClick={() => void navigate({ to: "/services" })}
               className="gap-2 text-base font-semibold"
               style={{ background: "oklch(0.55 0.18 170)", color: "white" }}

@@ -116,6 +116,7 @@ export interface PlatformStats {
     totalProfessionals: bigint;
     totalBookings: bigint;
     totalUsers: bigint;
+    totalRevenue: bigint;
     totalCompletedBookings: bigint;
 }
 export interface UserProfile {
@@ -130,12 +131,12 @@ export enum BookingStatus {
     inProgress = "inProgress"
 }
 export enum ServiceCategory {
-    cleaning = "cleaning",
-    plumbing = "plumbing",
-    painting = "painting",
-    electrician = "electrician",
-    acRepair = "acRepair",
-    carpentry = "carpentry"
+    dataRecovery = "dataRecovery",
+    desktopRepair = "desktopRepair",
+    networkSetup = "networkSetup",
+    laptopRepair = "laptopRepair",
+    accessoriesSales = "accessoriesSales",
+    computerSales = "computerSales"
 }
 export enum UserRole {
     admin = "admin",
@@ -614,19 +615,19 @@ function from_candid_variant_n15(_uploadFile: (file: ExternalBlob) => Promise<Ui
     return "admin" in value ? UserRole.admin : "user" in value ? UserRole.user : "guest" in value ? UserRole.guest : value;
 }
 function from_candid_variant_n20(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    cleaning: null;
+    dataRecovery: null;
 } | {
-    plumbing: null;
+    desktopRepair: null;
 } | {
-    painting: null;
+    networkSetup: null;
 } | {
-    electrician: null;
+    laptopRepair: null;
 } | {
-    acRepair: null;
+    accessoriesSales: null;
 } | {
-    carpentry: null;
+    computerSales: null;
 }): ServiceCategory {
-    return "cleaning" in value ? ServiceCategory.cleaning : "plumbing" in value ? ServiceCategory.plumbing : "painting" in value ? ServiceCategory.painting : "electrician" in value ? ServiceCategory.electrician : "acRepair" in value ? ServiceCategory.acRepair : "carpentry" in value ? ServiceCategory.carpentry : value;
+    return "dataRecovery" in value ? ServiceCategory.dataRecovery : "desktopRepair" in value ? ServiceCategory.desktopRepair : "networkSetup" in value ? ServiceCategory.networkSetup : "laptopRepair" in value ? ServiceCategory.laptopRepair : "accessoriesSales" in value ? ServiceCategory.accessoriesSales : "computerSales" in value ? ServiceCategory.computerSales : value;
 }
 function from_candid_variant_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     cancelled: null;
@@ -690,30 +691,30 @@ function to_candid_record_n28(_uploadFile: (file: ExternalBlob) => Promise<Uint8
     };
 }
 function to_candid_variant_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: ServiceCategory): {
-    cleaning: null;
+    dataRecovery: null;
 } | {
-    plumbing: null;
+    desktopRepair: null;
 } | {
-    painting: null;
+    networkSetup: null;
 } | {
-    electrician: null;
+    laptopRepair: null;
 } | {
-    acRepair: null;
+    accessoriesSales: null;
 } | {
-    carpentry: null;
+    computerSales: null;
 } {
-    return value == ServiceCategory.cleaning ? {
-        cleaning: null
-    } : value == ServiceCategory.plumbing ? {
-        plumbing: null
-    } : value == ServiceCategory.painting ? {
-        painting: null
-    } : value == ServiceCategory.electrician ? {
-        electrician: null
-    } : value == ServiceCategory.acRepair ? {
-        acRepair: null
-    } : value == ServiceCategory.carpentry ? {
-        carpentry: null
+    return value == ServiceCategory.dataRecovery ? {
+        dataRecovery: null
+    } : value == ServiceCategory.desktopRepair ? {
+        desktopRepair: null
+    } : value == ServiceCategory.networkSetup ? {
+        networkSetup: null
+    } : value == ServiceCategory.laptopRepair ? {
+        laptopRepair: null
+    } : value == ServiceCategory.accessoriesSales ? {
+        accessoriesSales: null
+    } : value == ServiceCategory.computerSales ? {
+        computerSales: null
     } : value;
 }
 function to_candid_variant_n30(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: BookingStatus): {

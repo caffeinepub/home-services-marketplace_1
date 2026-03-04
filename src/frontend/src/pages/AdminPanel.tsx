@@ -42,6 +42,7 @@ import {
   Briefcase,
   CalendarCheck,
   CheckSquare,
+  DollarSign,
   Loader2,
   Pencil,
   Plus,
@@ -66,12 +67,12 @@ import {
 } from "../hooks/useQueries";
 
 const ALL_CATEGORIES = [
-  ServiceCategory.cleaning,
-  ServiceCategory.plumbing,
-  ServiceCategory.electrician,
-  ServiceCategory.carpentry,
-  ServiceCategory.painting,
-  ServiceCategory.acRepair,
+  ServiceCategory.laptopRepair,
+  ServiceCategory.desktopRepair,
+  ServiceCategory.computerSales,
+  ServiceCategory.accessoriesSales,
+  ServiceCategory.networkSetup,
+  ServiceCategory.dataRecovery,
 ];
 
 type ServiceFormData = {
@@ -314,34 +315,70 @@ function ServiceFormModal({
   );
 }
 
-const statCards = [
+type StatCardDef =
+  | {
+      label: string;
+      key:
+        | "totalUsers"
+        | "totalProfessionals"
+        | "totalBookings"
+        | "totalCompletedBookings";
+      icon: React.ComponentType<{
+        className?: string;
+        style?: React.CSSProperties;
+      }>;
+      color: string;
+      iconColor: string;
+      isRevenue?: false;
+    }
+  | {
+      label: string;
+      key: "totalRevenue";
+      icon: React.ComponentType<{
+        className?: string;
+        style?: React.CSSProperties;
+      }>;
+      color: string;
+      iconColor: string;
+      isRevenue: true;
+    };
+
+const statCards: StatCardDef[] = [
   {
     label: "Total Users",
-    key: "totalUsers" as const,
+    key: "totalUsers",
     icon: Users,
     color: "oklch(0.92 0.06 220)",
     iconColor: "oklch(0.38 0.15 220)",
   },
   {
-    label: "Professionals",
-    key: "totalProfessionals" as const,
+    label: "Technicians",
+    key: "totalProfessionals",
     icon: Briefcase,
     color: "oklch(0.92 0.07 145)",
     iconColor: "oklch(0.38 0.14 145)",
   },
   {
     label: "Total Bookings",
-    key: "totalBookings" as const,
+    key: "totalBookings",
     icon: CalendarCheck,
     color: "oklch(0.95 0.08 80)",
     iconColor: "oklch(0.45 0.14 80)",
   },
   {
     label: "Completed",
-    key: "totalCompletedBookings" as const,
+    key: "totalCompletedBookings",
     icon: CheckSquare,
     color: "oklch(0.92 0.07 170)",
     iconColor: "oklch(0.38 0.14 170)",
+  },
+  {
+    label: "Total Revenue",
+    key: "totalRevenue",
+    icon: DollarSign,
+    color: "oklch(0.92 0.07 145)",
+    iconColor: "oklch(0.38 0.14 145)",
+    isRevenue: true,
   },
 ];
 
@@ -413,8 +450,8 @@ export function AdminPanel() {
           </h2>
 
           {statsLoading ? (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {["sk1", "sk2", "sk3", "sk4"].map((id) => (
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+              {["sk1", "sk2", "sk3", "sk4", "sk5"].map((id) => (
                 <div
                   key={id}
                   className="bg-card border border-border rounded-xl p-5"
@@ -426,10 +463,13 @@ export function AdminPanel() {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
               {statCards.map((card, i) => {
                 const Icon = card.icon;
-                const value = stats ? Number(stats[card.key]) : 0;
+                const rawValue = stats ? stats[card.key] : 0n;
+                const displayValue = card.isRevenue
+                  ? `$${Number(rawValue).toLocaleString()}`
+                  : Number(rawValue).toLocaleString();
 
                 return (
                   <motion.div
@@ -449,7 +489,7 @@ export function AdminPanel() {
                       />
                     </div>
                     <div className="font-display font-black text-2xl text-foreground">
-                      {value.toLocaleString()}
+                      {displayValue}
                     </div>
                     <div className="text-sm text-muted-foreground mt-0.5">
                       {card.label}

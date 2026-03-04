@@ -9,12 +9,12 @@
 import { IDL } from '@icp-sdk/core/candid';
 
 export const ServiceCategory = IDL.Variant({
-  'cleaning' : IDL.Null,
-  'plumbing' : IDL.Null,
-  'painting' : IDL.Null,
-  'electrician' : IDL.Null,
-  'acRepair' : IDL.Null,
-  'carpentry' : IDL.Null,
+  'dataRecovery' : IDL.Null,
+  'desktopRepair' : IDL.Null,
+  'networkSetup' : IDL.Null,
+  'laptopRepair' : IDL.Null,
+  'accessoriesSales' : IDL.Null,
+  'computerSales' : IDL.Null,
 });
 export const UserRole = IDL.Variant({
   'admin' : IDL.Null,
@@ -51,6 +51,7 @@ export const PlatformStats = IDL.Record({
   'totalProfessionals' : IDL.Nat,
   'totalBookings' : IDL.Nat,
   'totalUsers' : IDL.Nat,
+  'totalRevenue' : IDL.Nat,
   'totalCompletedBookings' : IDL.Nat,
 });
 export const Service = IDL.Record({
@@ -112,12 +113,12 @@ export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
   const ServiceCategory = IDL.Variant({
-    'cleaning' : IDL.Null,
-    'plumbing' : IDL.Null,
-    'painting' : IDL.Null,
-    'electrician' : IDL.Null,
-    'acRepair' : IDL.Null,
-    'carpentry' : IDL.Null,
+    'dataRecovery' : IDL.Null,
+    'desktopRepair' : IDL.Null,
+    'networkSetup' : IDL.Null,
+    'laptopRepair' : IDL.Null,
+    'accessoriesSales' : IDL.Null,
+    'computerSales' : IDL.Null,
   });
   const UserRole = IDL.Variant({
     'admin' : IDL.Null,
@@ -154,6 +155,7 @@ export const idlFactory = ({ IDL }) => {
     'totalProfessionals' : IDL.Nat,
     'totalBookings' : IDL.Nat,
     'totalUsers' : IDL.Nat,
+    'totalRevenue' : IDL.Nat,
     'totalCompletedBookings' : IDL.Nat,
   });
   const Service = IDL.Record({

@@ -6,13 +6,13 @@ import { useSearch } from "@tanstack/react-router";
 import {
   AlertCircle,
   CalendarPlus,
-  Droplets,
-  Hammer,
-  Paintbrush,
+  HardDrive,
+  Laptop,
+  Monitor,
+  Mouse,
   Search,
-  SprayCanIcon as SprayCan,
-  Wind,
-  Zap,
+  ShoppingCart,
+  Wifi,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
@@ -28,141 +28,141 @@ const categoryIcons: Record<
   ServiceCategory,
   React.ComponentType<{ className?: string }>
 > = {
-  [ServiceCategory.cleaning]: SprayCan,
-  [ServiceCategory.plumbing]: Droplets,
-  [ServiceCategory.electrician]: Zap,
-  [ServiceCategory.carpentry]: Hammer,
-  [ServiceCategory.painting]: Paintbrush,
-  [ServiceCategory.acRepair]: Wind,
+  [ServiceCategory.laptopRepair]: Laptop,
+  [ServiceCategory.desktopRepair]: Monitor,
+  [ServiceCategory.computerSales]: ShoppingCart,
+  [ServiceCategory.accessoriesSales]: Mouse,
+  [ServiceCategory.networkSetup]: Wifi,
+  [ServiceCategory.dataRecovery]: HardDrive,
 };
 
 const categoryColors: Record<ServiceCategory, string> = {
-  [ServiceCategory.cleaning]: "oklch(0.92 0.07 145)",
-  [ServiceCategory.plumbing]: "oklch(0.92 0.06 220)",
-  [ServiceCategory.electrician]: "oklch(0.95 0.08 80)",
-  [ServiceCategory.carpentry]: "oklch(0.94 0.07 55)",
-  [ServiceCategory.painting]: "oklch(0.92 0.06 290)",
-  [ServiceCategory.acRepair]: "oklch(0.92 0.07 190)",
+  [ServiceCategory.laptopRepair]: "oklch(0.92 0.07 220)",
+  [ServiceCategory.desktopRepair]: "oklch(0.92 0.06 260)",
+  [ServiceCategory.computerSales]: "oklch(0.92 0.07 170)",
+  [ServiceCategory.accessoriesSales]: "oklch(0.94 0.07 55)",
+  [ServiceCategory.networkSetup]: "oklch(0.92 0.06 195)",
+  [ServiceCategory.dataRecovery]: "oklch(0.92 0.06 30)",
 };
 
 const ALL_CATEGORIES = [
-  ServiceCategory.cleaning,
-  ServiceCategory.plumbing,
-  ServiceCategory.electrician,
-  ServiceCategory.carpentry,
-  ServiceCategory.painting,
-  ServiceCategory.acRepair,
+  ServiceCategory.laptopRepair,
+  ServiceCategory.desktopRepair,
+  ServiceCategory.computerSales,
+  ServiceCategory.accessoriesSales,
+  ServiceCategory.networkSetup,
+  ServiceCategory.dataRecovery,
 ];
 
 // Seed services for initial display
 const SEED_SERVICES: Service[] = [
   {
     id: 1n,
-    name: "Standard Home Cleaning",
+    name: "Screen Replacement",
     description:
-      "Complete cleaning of all rooms including kitchen and bathrooms. Uses eco-friendly products.",
-    category: ServiceCategory.cleaning,
+      "Professional laptop screen replacement for cracked, damaged, or dim displays. Covers all major brands including Dell, HP, Lenovo, Apple, and ASUS.",
+    category: ServiceCategory.laptopRepair,
     minPrice: 80n,
-    maxPrice: 150n,
-  },
-  {
-    id: 2n,
-    name: "Deep Cleaning Package",
-    description:
-      "Intensive cleaning for move-in/move-out or spring cleaning. Includes appliances and hard-to-reach areas.",
-    category: ServiceCategory.cleaning,
-    minPrice: 150n,
-    maxPrice: 280n,
-  },
-  {
-    id: 3n,
-    name: "Pipe Leak Repair",
-    description:
-      "Fix leaking pipes, taps, and joints. Includes diagnosis, repair, and pressure testing.",
-    category: ServiceCategory.plumbing,
-    minPrice: 60n,
     maxPrice: 200n,
   },
   {
-    id: 4n,
-    name: "Bathroom Fixture Installation",
+    id: 2n,
+    name: "Battery & Keyboard Fix",
     description:
-      "Install sinks, toilets, showers, and bathtubs. Professional fitting with warranty.",
-    category: ServiceCategory.plumbing,
-    minPrice: 120n,
-    maxPrice: 400n,
-  },
-  {
-    id: 5n,
-    name: "Electrical Wiring Repair",
-    description:
-      "Diagnose and fix faulty wiring, circuit breakers, and electrical panels.",
-    category: ServiceCategory.electrician,
-    minPrice: 80n,
-    maxPrice: 250n,
-  },
-  {
-    id: 6n,
-    name: "Light Fixture Installation",
-    description:
-      "Install ceiling lights, fans, or outdoor lighting. Includes wiring and fixtures.",
-    category: ServiceCategory.electrician,
+      "Replace worn-out laptop batteries that no longer hold charge, or fix/replace sticky, broken, or unresponsive keyboard keys.",
+    category: ServiceCategory.laptopRepair,
     minPrice: 50n,
     maxPrice: 150n,
   },
   {
-    id: 7n,
-    name: "Custom Furniture Assembly",
+    id: 3n,
+    name: "PC Diagnostics & Repair",
     description:
-      "Assemble flat-pack furniture or build custom shelving and storage solutions.",
-    category: ServiceCategory.carpentry,
+      "Full desktop PC diagnostic including hardware and software checks. Covers overheating, random shutdowns, boot failures, and slow performance.",
+    category: ServiceCategory.desktopRepair,
     minPrice: 60n,
-    maxPrice: 200n,
+    maxPrice: 180n,
+  },
+  {
+    id: 4n,
+    name: "Hardware Upgrade",
+    description:
+      "Upgrade your desktop with more RAM, a faster SSD, a new GPU, or a CPU. We handle sourcing, installation, and testing.",
+    category: ServiceCategory.desktopRepair,
+    minPrice: 80n,
+    maxPrice: 250n,
+  },
+  {
+    id: 5n,
+    name: "Refurbished Laptops",
+    description:
+      "Certified pre-owned laptops fully tested and restored to like-new condition. Includes 6-month warranty. Brands: Dell, HP, Lenovo, Apple.",
+    category: ServiceCategory.computerSales,
+    minPrice: 300n,
+    maxPrice: 800n,
+  },
+  {
+    id: 6n,
+    name: "Custom-Built Desktop PCs",
+    description:
+      "We build custom desktop PCs tailored to your needs — gaming, creative work, or office use. All components are new and carry manufacturer warranty.",
+    category: ServiceCategory.computerSales,
+    minPrice: 500n,
+    maxPrice: 1500n,
+  },
+  {
+    id: 7n,
+    name: "Keyboards, Mice & Webcams",
+    description:
+      "Wide selection of mechanical keyboards, ergonomic mice, and HD/4K webcams from top brands like Logitech, Razer, and Microsoft.",
+    category: ServiceCategory.accessoriesSales,
+    minPrice: 20n,
+    maxPrice: 120n,
   },
   {
     id: 8n,
-    name: "Door & Window Repair",
+    name: "Monitors & Docking Stations",
     description:
-      "Fix sticking doors, replace hinges, repair frames, and weather-seal windows.",
-    category: ServiceCategory.carpentry,
+      "Full HD, QHD, and 4K monitors from Dell, LG, and Samsung. USB-C and Thunderbolt docking stations for laptop users.",
+    category: ServiceCategory.accessoriesSales,
     minPrice: 80n,
-    maxPrice: 220n,
+    maxPrice: 350n,
   },
   {
     id: 9n,
-    name: "Interior Room Painting",
+    name: "Home Wi-Fi Setup",
     description:
-      "Full interior painting with premium paints. Includes surface prep and two coats.",
-    category: ServiceCategory.painting,
-    minPrice: 200n,
-    maxPrice: 600n,
-  },
-  {
-    id: 10n,
-    name: "Exterior House Painting",
-    description:
-      "Weather-resistant exterior painting. Includes primer and protective topcoat.",
-    category: ServiceCategory.painting,
-    minPrice: 400n,
-    maxPrice: 1200n,
-  },
-  {
-    id: 11n,
-    name: "AC Servicing & Tune-up",
-    description:
-      "Clean filters, check refrigerant levels, and inspect all components for optimal performance.",
-    category: ServiceCategory.acRepair,
-    minPrice: 70n,
+      "Professional home Wi-Fi setup including router configuration, optimal placement, security hardening, and device connection.",
+    category: ServiceCategory.networkSetup,
+    minPrice: 60n,
     maxPrice: 150n,
   },
   {
-    id: 12n,
-    name: "AC Installation",
+    id: 10n,
+    name: "Office Network Installation",
     description:
-      "Install split or window AC units. Includes mounting, wiring, and initial setup.",
-    category: ServiceCategory.acRepair,
-    minPrice: 200n,
+      "Complete office network installation with structured cabling, switch/router configuration, VLAN setup, and firewall configuration.",
+    category: ServiceCategory.networkSetup,
+    minPrice: 150n,
     maxPrice: 500n,
+  },
+  {
+    id: 11n,
+    name: "Hard Drive Recovery",
+    description:
+      "Recover lost data from failed, corrupted, or accidentally formatted hard drives. Supports HDD and external drives of all brands.",
+    category: ServiceCategory.dataRecovery,
+    minPrice: 100n,
+    maxPrice: 400n,
+  },
+  {
+    id: 12n,
+    name: "SSD & USB Recovery",
+    description:
+      "Data recovery from failed SSDs, NVMe drives, USB flash drives, and memory cards. Clean-room recovery available for severe cases.",
+    category: ServiceCategory.dataRecovery,
+    minPrice: 80n,
+    maxPrice: 300n,
   },
 ];
 
@@ -171,7 +171,7 @@ function ServiceCard({
   index,
   onBook,
 }: { service: Service; index: number; onBook: (service: Service) => void }) {
-  const Icon = categoryIcons[service.category] ?? SprayCan;
+  const Icon = categoryIcons[service.category] ?? Laptop;
   const bgColor = categoryColors[service.category] ?? "oklch(0.94 0.01 250)";
 
   return (
@@ -273,7 +273,8 @@ export function ServicesPage() {
             Our Services
           </h1>
           <p className="text-muted-foreground">
-            Choose from {allServices.length} professional services
+            Choose from {allServices.length} professional computer and laptop
+            services
           </p>
         </div>
       </div>

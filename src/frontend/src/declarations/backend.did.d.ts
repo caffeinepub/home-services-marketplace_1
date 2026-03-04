@@ -30,6 +30,7 @@ export interface PlatformStats {
   'totalProfessionals' : bigint,
   'totalBookings' : bigint,
   'totalUsers' : bigint,
+  'totalRevenue' : bigint,
   'totalCompletedBookings' : bigint,
 }
 export interface ProfessionalProfile {
@@ -44,12 +45,12 @@ export interface Service {
   'category' : ServiceCategory,
   'minPrice' : bigint,
 }
-export type ServiceCategory = { 'cleaning' : null } |
-  { 'plumbing' : null } |
-  { 'painting' : null } |
-  { 'electrician' : null } |
-  { 'acRepair' : null } |
-  { 'carpentry' : null };
+export type ServiceCategory = { 'dataRecovery' : null } |
+  { 'desktopRepair' : null } |
+  { 'networkSetup' : null } |
+  { 'laptopRepair' : null } |
+  { 'accessoriesSales' : null } |
+  { 'computerSales' : null };
 export interface UserProfile {
   'role' : UserRole,
   'professional' : [] | [ProfessionalProfile],

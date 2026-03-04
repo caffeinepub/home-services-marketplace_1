@@ -34,6 +34,7 @@ export interface PlatformStats {
     totalProfessionals: bigint;
     totalBookings: bigint;
     totalUsers: bigint;
+    totalRevenue: bigint;
     totalCompletedBookings: bigint;
 }
 export interface UserProfile {
@@ -48,12 +49,12 @@ export enum BookingStatus {
     inProgress = "inProgress"
 }
 export enum ServiceCategory {
-    cleaning = "cleaning",
-    plumbing = "plumbing",
-    painting = "painting",
-    electrician = "electrician",
-    acRepair = "acRepair",
-    carpentry = "carpentry"
+    dataRecovery = "dataRecovery",
+    desktopRepair = "desktopRepair",
+    networkSetup = "networkSetup",
+    laptopRepair = "laptopRepair",
+    accessoriesSales = "accessoriesSales",
+    computerSales = "computerSales"
 }
 export enum UserRole {
     admin = "admin",

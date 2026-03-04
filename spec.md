@@ -1,36 +1,41 @@
-# Home Services Marketplace
+# Computer Sales & Services Marketplace
 
 ## Current State
-New project. No existing code.
+- A home services marketplace with categories: Cleaning, Plumbing, Electrician, Carpentry, Painting, AC Repair
+- Landing page hero text and content reference "home services" and homeowners
+- Services page has seed data for home-related services
+- Professional Dashboard shows a flat list of active/completed jobs
+- Admin Panel manages services and shows platform stats
+- Registration page allows choosing Customer or Professional role with home-service categories
+- Backend categories are: #cleaning, #plumbing, #electrician, #carpentry, #painting, #acRepair
 
 ## Requested Changes (Diff)
 
 ### Add
-- **Service Catalog**: Browse services by category (Cleaning, Plumbing, Electrician, Carpentry, Painting, AC Repair). Each service has a name, description, price range, and category.
-- **Booking Flow**: Users can select a service, choose a date/time slot, enter their address, and confirm a booking.
-- **User Dashboard**: View upcoming and past bookings, cancel pending bookings, view booking status.
-- **Professional Dashboard**: Professionals can view jobs assigned to them, update job status (Pending → In Progress → Completed).
-- **Admin Panel**: View platform stats (total users, professionals, bookings), manage service listings (add/edit/remove), view all bookings.
-- **Role-based access**: Three roles — Customer, Professional, Admin. Each sees their own dashboard.
-- **Sample content**: Pre-seeded service categories and sample services.
+- Professional Dashboard: Kanban-style job board with columns — New Orders, In Progress, Completed — for technicians to drag/click-move jobs between stages
+- Professional Dashboard: Earnings analytics panel showing total earnings (calculated from job prices), jobs completed count, and a simple earnings summary
+- New service categories for computers: laptopRepair, desktopRepair, computerSales, accessoriesSales, networkSetup, dataRecovery
+- Seed data for computer/laptop/accessories services in ServicesPage and backend initialize()
 
 ### Modify
-- Nothing (new project).
+- LandingPage: Rebrand all text to computer sales & services context. Hero title, subtitle, stats labels (e.g. "Happy Customers", "Certified Technicians"), features section ("Certified Technicians", "Same-Day Service", "Warranty on Repairs"), CTA text
+- LandingPage: Update 6 category cards with computer categories and appropriate icons (Laptop, Monitor, Mouse, Wifi, HardDrive, Database)
+- ServicesPage: Update category tabs and seed services to reflect computer/laptop/accessories services
+- AdminPanel: Update category list to computer categories in service form dropdown
+- RegistrationPage: Update professional category options to computer service categories
+- ProfessionalDashboard: Replace flat job list with Kanban columns (New / In Progress / Completed). Each job card shows service name, customer, date, price range. Action button moves job to next stage
+- ProfessionalDashboard: Add earnings panel at top showing total earned (sum of maxPrice for completed jobs as estimate), count of completed jobs, and count of active jobs
+- Backend: Replace home-service categories with computer-service categories. Update initialize() seed data with computer services
 
 ### Remove
-- Nothing (new project).
+- All references to cleaning, plumbing, painting, carpentry, AC repair, electrician in categories and seed data
+- "homeowners" language on landing page
 
 ## Implementation Plan
-1. Select `authorization` component for role-based access.
-2. Generate Motoko backend with:
-   - User profiles with roles (Customer, Professional, Admin)
-   - Service catalog CRUD
-   - Booking management (create, list, update status, cancel)
-   - Platform stats query for admin
-3. Build frontend with:
-   - Landing page with service category grid
-   - Service detail + booking form
-   - Customer dashboard (my bookings)
-   - Professional dashboard (assigned jobs, status updates)
-   - Admin panel (stats, service management, all bookings)
-   - Role-based routing after login
+1. Regenerate Motoko backend with new computer service categories (laptopRepair, desktopRepair, computerSales, accessoriesSales, networkSetup, dataRecovery) and updated seed data
+2. Update LandingPage: new copy, computer category cards with correct icons
+3. Update ServicesPage: new category list, new seed services for computers/laptops/accessories
+4. Update AdminPanel: new category dropdown items and labels
+5. Update RegistrationPage: new professional categories
+6. Rebuild ProfessionalDashboard with Kanban columns and earnings analytics
+7. Update useQueries.ts getCategoryLabel helper for new categories

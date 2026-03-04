@@ -113,6 +113,7 @@ export function usePlatformStats() {
           totalBookings: 0n,
           totalUsers: 0n,
           totalCompletedBookings: 0n,
+          totalRevenue: 0n,
         };
       }
       return actor.getPlatformStats();
@@ -315,12 +316,12 @@ export function formatPriceRange(min: bigint, max: bigint): string {
 
 export function getCategoryLabel(cat: ServiceCategory): string {
   const labels: Record<ServiceCategory, string> = {
-    [ServiceCategory.cleaning]: "Cleaning",
-    [ServiceCategory.plumbing]: "Plumbing",
-    [ServiceCategory.painting]: "Painting",
-    [ServiceCategory.electrician]: "Electrician",
-    [ServiceCategory.acRepair]: "AC Repair",
-    [ServiceCategory.carpentry]: "Carpentry",
+    [ServiceCategory.laptopRepair]: "Laptop Repair",
+    [ServiceCategory.desktopRepair]: "Desktop Repair",
+    [ServiceCategory.computerSales]: "Computer Sales",
+    [ServiceCategory.accessoriesSales]: "Accessories",
+    [ServiceCategory.networkSetup]: "Network Setup",
+    [ServiceCategory.dataRecovery]: "Data Recovery",
   };
   return labels[cat] ?? cat;
 }
