@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -36,6 +37,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "@tanstack/react-router";
 import {
   AlertCircle,
@@ -49,17 +51,29 @@ import {
   ShieldCheck,
   Trash2,
   TrendingUp,
+  UserCheck,
   Users,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { type Service, ServiceCategory } from "../backend.d";
+import {
+  type Booking,
+  BookingStatus,
+  type Service,
+  ServiceCategory,
+} from "../backend.d";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
   formatPriceRange,
   getCategoryLabel,
+  getStatusClass,
+  getStatusLabel,
+  shortenPrincipal,
   useAddService,
+  useAllBookings,
+  useAssignBookingToProfessional,
+  useListProfessionals,
   useListServices,
   usePlatformStats,
   useRemoveService,
@@ -382,6 +396,433 @@ const statCards: StatCardDef[] = [
   },
 ];
 
+// ─── Status badge helper ───────────────────────────────────────────────────
+function StatusBadge({ status }: { status: BookingStatus }) {
+  const statusStyles: Record<BookingStatus, string> = {
+    [BookingStatus.pending]:
+      "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300",
+    [BookingStatus.confirmed]:
+      "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300",
+    [BookingStatus.inProgress]:
+      "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300",
+    [BookingStatus.completed]:
+      "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300",
+    [BookingStatus.cancelled]:
+      "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300",
+  };
+  return (
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${statusStyles[status] ?? ""}`}
+    >
+      {getStatusLabel(status)}
+    </span>
+  );
+}
+
+// ─── Assign Technician Dialog ──────────────────────────────────────────────
+interface AssignDialogProps {
+  booking: Booking | null;
+  onClose: () => void;
+}
+
+function AssignDialog({ booking, onClose }: AssignDialogProps) {
+  const { data: professionals, isLoading: profsLoading } =
+    useListProfessionals();
+  const assignMutation = useAssignBookingToProfessional();
+  const [selectedPrincipal, setSelectedPrincipal] = useState<string>("");
+
+  const handleConfirm = async () => {
+    if (!booking || !selectedPrincipal) return;
+    const prof = professionals?.find(
+      (p) => p.principal.toString() === selectedPrincipal,
+    );
+    if (!prof) return;
+    try {
+      await assignMutation.mutateAsync({
+        bookingId: booking.id,
+        professional: prof.principal,
+      });
+      toast.success("Booking assigned successfully.");
+      onClose();
+    } catch {
+      toast.error("Failed to assign booking. Please try again.");
+    }
+  };
+
+  return (
+    <Dialog open={!!booking} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent
+        className="sm:max-w-md"
+        data-ocid="admin.assign_dialog.dialog"
+      >
+        <DialogHeader>
+          <DialogTitle className="font-display text-xl flex items-center gap-2">
+            <UserCheck className="w-5 h-5 text-primary" />
+            Assign Technician
+          </DialogTitle>
+          <DialogDescription>
+            Select a technician to assign to booking{" "}
+            <strong>#{booking ? Number(booking.id) : ""}</strong>.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          {booking && (
+            <div className="bg-secondary/50 rounded-lg p-3 text-sm space-y-1">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Customer</span>
+                <span className="font-mono text-xs">
+                  {shortenPrincipal(booking.customer.toString())}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Date</span>
+                <span>{booking.date}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Time</span>
+                <span>{booking.timeSlot}</span>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-1.5">
+            <Label>Select Technician</Label>
+            {profsLoading ? (
+              <Skeleton className="h-10 w-full" />
+            ) : (
+              <Select
+                value={selectedPrincipal}
+                onValueChange={setSelectedPrincipal}
+              >
+                <SelectTrigger data-ocid="admin.assign_dialog.select">
+                  <SelectValue placeholder="Choose a technician..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {!professionals || professionals.length === 0 ? (
+                    <SelectItem value="__none__" disabled>
+                      No technicians available
+                    </SelectItem>
+                  ) : (
+                    professionals.map((prof) => (
+                      <SelectItem
+                        key={prof.principal.toString()}
+                        value={prof.principal.toString()}
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-medium">
+                            {prof.displayName}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {getCategoryLabel(prof.category)}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            data-ocid="admin.assign_dialog.cancel_button"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={() => void handleConfirm()}
+            disabled={!selectedPrincipal || assignMutation.isPending}
+            data-ocid="admin.assign_dialog.confirm_button"
+            className="gap-2 shadow-primary"
+          >
+            {assignMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <UserCheck className="h-4 w-4" />
+            )}
+            {assignMutation.isPending ? "Assigning..." : "Assign Technician"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Bookings Management Section ──────────────────────────────────────────
+type BookingFilter =
+  | "all"
+  | BookingStatus.pending
+  | BookingStatus.confirmed
+  | BookingStatus.inProgress
+  | BookingStatus.completed
+  | BookingStatus.cancelled;
+
+interface BookingsManagementProps {
+  services: Service[];
+}
+
+function BookingsManagement({ services }: BookingsManagementProps) {
+  const { data: bookings, isLoading, isError } = useAllBookings();
+  const { data: professionals } = useListProfessionals();
+  const [filter, setFilter] = useState<BookingFilter>("all");
+  const [assigningBooking, setAssigningBooking] = useState<Booking | null>(
+    null,
+  );
+
+  const serviceMap = new Map(services.map((s) => [s.id.toString(), s.name]));
+  const profMap = new Map(
+    professionals?.map((p) => [p.principal.toString(), p.displayName]) ?? [],
+  );
+
+  const filterTabs: { value: BookingFilter; label: string }[] = [
+    { value: "all", label: "All" },
+    { value: BookingStatus.pending, label: "Pending" },
+    { value: BookingStatus.confirmed, label: "Confirmed" },
+    { value: BookingStatus.inProgress, label: "In Progress" },
+    { value: BookingStatus.completed, label: "Completed" },
+    { value: BookingStatus.cancelled, label: "Cancelled" },
+  ];
+
+  const filtered =
+    bookings?.filter((b) => filter === "all" || b.status === filter) ?? [];
+
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-display font-bold text-lg text-foreground flex items-center gap-2">
+          <CalendarCheck className="w-5 h-5 text-primary" />
+          Bookings Management
+        </h2>
+        {!isLoading && !isError && bookings && (
+          <span className="text-sm text-muted-foreground">
+            {bookings.length} total booking{bookings.length !== 1 ? "s" : ""}
+          </span>
+        )}
+      </div>
+
+      {/* Filter Tabs */}
+      <Tabs
+        value={filter}
+        onValueChange={(v) => setFilter(v as BookingFilter)}
+        className="mb-4"
+      >
+        <TabsList className="bg-secondary/60 h-auto flex-wrap gap-1 p-1">
+          {filterTabs.map((tab) => {
+            const count =
+              tab.value === "all"
+                ? (bookings?.length ?? 0)
+                : (bookings?.filter((b) => b.status === tab.value).length ?? 0);
+            return (
+              <TabsTrigger
+                key={tab.value}
+                value={tab.value}
+                data-ocid="admin.bookings.tab"
+                className="gap-1.5 text-xs font-medium"
+              >
+                {tab.label}
+                {!isLoading && (
+                  <span className="bg-background/60 rounded-full px-1.5 py-0.5 text-xs font-bold tabular-nums">
+                    {count}
+                  </span>
+                )}
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
+      </Tabs>
+
+      {/* Table states */}
+      {isLoading ? (
+        <div
+          className="bg-card border border-border rounded-xl overflow-hidden"
+          data-ocid="admin.bookings.loading_state"
+        >
+          <div className="p-4 space-y-3">
+            {["sk1", "sk2", "sk3", "sk4"].map((id) => (
+              <div key={id} className="flex gap-4 items-center">
+                <Skeleton className="h-5 w-10" />
+                <Skeleton className="h-5 flex-1" />
+                <Skeleton className="h-5 w-28" />
+                <Skeleton className="h-5 w-24" />
+                <Skeleton className="h-6 w-20 rounded-full" />
+                <Skeleton className="h-5 w-28" />
+                <Skeleton className="h-8 w-16 rounded-md" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : isError ? (
+        <div
+          className="flex flex-col items-center gap-3 py-12 text-center bg-card border border-border rounded-xl"
+          data-ocid="admin.bookings.error_state"
+        >
+          <AlertCircle className="w-8 h-8 text-destructive" />
+          <p className="text-muted-foreground text-sm">
+            Failed to load bookings. Please refresh.
+          </p>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div
+          className="flex flex-col items-center gap-4 py-12 text-center bg-card border border-border rounded-xl"
+          data-ocid="admin.bookings.empty_state"
+        >
+          <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center">
+            <CalendarCheck className="w-7 h-7 text-muted-foreground" />
+          </div>
+          <div>
+            <p className="font-display font-bold text-base text-foreground">
+              {filter === "all"
+                ? "No bookings yet"
+                : `No ${getStatusLabel(filter as BookingStatus)} bookings`}
+            </p>
+            <p className="text-muted-foreground text-sm mt-1">
+              {filter === "all"
+                ? "Customer bookings will appear here once they start placing orders."
+                : "Try selecting a different filter tab."}
+            </p>
+          </div>
+        </div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          className="bg-card border border-border rounded-xl overflow-hidden"
+          data-ocid="admin.bookings.table"
+        >
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-secondary hover:bg-secondary">
+                <TableHead className="font-display font-bold text-foreground w-16">
+                  ID
+                </TableHead>
+                <TableHead className="font-display font-bold text-foreground">
+                  Service
+                </TableHead>
+                <TableHead className="font-display font-bold text-foreground">
+                  Customer
+                </TableHead>
+                <TableHead className="font-display font-bold text-foreground">
+                  Date & Time
+                </TableHead>
+                <TableHead className="font-display font-bold text-foreground">
+                  Status
+                </TableHead>
+                <TableHead className="font-display font-bold text-foreground">
+                  Assigned Technician
+                </TableHead>
+                <TableHead className="text-right font-display font-bold text-foreground">
+                  Actions
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.map((booking, i) => {
+                const serviceName =
+                  serviceMap.get(booking.serviceId.toString()) ??
+                  `Service #${booking.serviceId}`;
+                const customerShort = shortenPrincipal(
+                  booking.customer.toString(),
+                );
+                const techName = booking.assignedProfessional
+                  ? (profMap.get(booking.assignedProfessional.toString()) ??
+                    shortenPrincipal(booking.assignedProfessional.toString()))
+                  : null;
+                const canAssign =
+                  booking.status === BookingStatus.pending ||
+                  !booking.assignedProfessional;
+
+                return (
+                  <TableRow
+                    key={booking.id.toString()}
+                    className="hover:bg-secondary/50"
+                    data-ocid={`admin.bookings.row.${i + 1}`}
+                  >
+                    <TableCell className="font-mono text-sm font-bold text-muted-foreground">
+                      #{Number(booking.id)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium text-foreground text-sm max-w-40 truncate">
+                        {serviceName}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <code className="text-xs font-mono text-muted-foreground bg-secondary px-1.5 py-0.5 rounded">
+                        {customerShort}
+                      </code>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm text-foreground">
+                        {booking.date}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {booking.timeSlot}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge status={booking.status} />
+                    </TableCell>
+                    <TableCell>
+                      {techName ? (
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2 h-2 rounded-full bg-green-500" />
+                          <span className="text-sm font-medium text-foreground">
+                            {techName}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-muted-foreground italic">
+                          Unassigned
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {canAssign ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          data-ocid={`admin.bookings.assign_button.${i + 1}`}
+                          onClick={() => setAssigningBooking(booking)}
+                          className="gap-1.5 hover:bg-primary/10 hover:text-primary hover:border-primary/30 text-xs"
+                        >
+                          <UserCheck className="w-3.5 h-3.5" />
+                          Assign
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          data-ocid={`admin.bookings.assign_button.${i + 1}`}
+                          onClick={() => setAssigningBooking(booking)}
+                          className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                        >
+                          <UserCheck className="w-3.5 h-3.5" />
+                          Reassign
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </motion.div>
+      )}
+
+      {/* Assign Dialog */}
+      <AssignDialog
+        booking={assigningBooking}
+        onClose={() => setAssigningBooking(null)}
+      />
+    </section>
+  );
+}
+
 export function AdminPanel() {
   const { identity } = useInternetIdentity();
   const navigate = useNavigate();
@@ -672,29 +1113,8 @@ export function AdminPanel() {
           )}
         </section>
 
-        {/* ─── Bookings Note ─── */}
-        <section>
-          <div className="bg-card border border-border rounded-xl p-6">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center shrink-0">
-                <CalendarCheck className="w-5 h-5 text-accent-foreground" />
-              </div>
-              <div>
-                <h3 className="font-display font-bold text-base text-foreground mb-1">
-                  Bookings Management
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Bookings are managed at the professional level. To assign a
-                  booking to a professional, use the backend API:{" "}
-                  <code className="font-mono text-xs bg-secondary px-1 py-0.5 rounded">
-                    assignBookingToProfessional(bookingId, professional)
-                  </code>
-                  . Platform-wide booking stats are shown in the overview above.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* ─── Bookings Management ─── */}
+        <BookingsManagement services={services ?? []} />
       </div>
 
       {/* Service Form Modal */}

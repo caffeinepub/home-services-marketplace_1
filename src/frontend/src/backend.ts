@@ -101,6 +101,18 @@ export interface ProfessionalProfile {
     displayName: string;
     category: ServiceCategory;
 }
+export interface ProfessionalInfo {
+    principal: Principal;
+    displayName: string;
+    category: ServiceCategory;
+}
+export interface PlatformStats {
+    totalProfessionals: bigint;
+    totalBookings: bigint;
+    totalUsers: bigint;
+    totalRevenue: bigint;
+    totalCompletedBookings: bigint;
+}
 export interface Booking {
     id: bigint;
     status: BookingStatus;
@@ -111,13 +123,6 @@ export interface Booking {
     address: string;
     serviceId: bigint;
     timeSlot: string;
-}
-export interface PlatformStats {
-    totalProfessionals: bigint;
-    totalBookings: bigint;
-    totalUsers: bigint;
-    totalRevenue: bigint;
-    totalCompletedBookings: bigint;
 }
 export interface UserProfile {
     role: UserRole;
@@ -150,6 +155,7 @@ export interface backendInterface {
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     cancelBooking(bookingId: bigint): Promise<void>;
     createBooking(serviceId: bigint, date: string, timeSlot: string, address: string): Promise<bigint>;
+    getAllBookings(): Promise<Array<Booking>>;
     getAssignedBookings(): Promise<Array<Booking>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
@@ -160,6 +166,7 @@ export interface backendInterface {
     initialize(): Promise<void>;
     isAdminCaller(): Promise<boolean>;
     isCallerAdmin(): Promise<boolean>;
+    listProfessionals(): Promise<Array<ProfessionalInfo>>;
     listServices(): Promise<Array<Service>>;
     registerCustomer(): Promise<void>;
     registerProfessional(displayName: string, category: ServiceCategory): Promise<void>;
@@ -168,7 +175,7 @@ export interface backendInterface {
     updateBookingStatus(bookingId: bigint, status: BookingStatus): Promise<void>;
     updateService(serviceId: bigint, name: string, description: string, category: ServiceCategory, minPrice: bigint, maxPrice: bigint): Promise<void>;
 }
-import type { Booking as _Booking, BookingStatus as _BookingStatus, ProfessionalProfile as _ProfessionalProfile, Service as _Service, ServiceCategory as _ServiceCategory, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
+import type { Booking as _Booking, BookingStatus as _BookingStatus, ProfessionalInfo as _ProfessionalInfo, ProfessionalProfile as _ProfessionalProfile, Service as _Service, ServiceCategory as _ServiceCategory, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
     async _initializeAccessControlWithSecret(arg0: string): Promise<void> {
@@ -253,6 +260,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.createBooking(arg0, arg1, arg2, arg3);
             return result;
+        }
+    }
+    async getAllBookings(): Promise<Array<Booking>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllBookings();
+                return from_candid_vec_n5(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllBookings();
+            return from_candid_vec_n5(this._uploadFile, this._downloadFile, result);
         }
     }
     async getAssignedBookings(): Promise<Array<Booking>> {
@@ -395,6 +416,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async listProfessionals(): Promise<Array<ProfessionalInfo>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.listProfessionals();
+                return from_candid_vec_n25(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.listProfessionals();
+            return from_candid_vec_n25(this._uploadFile, this._downloadFile, result);
+        }
+    }
     async listServices(): Promise<Array<Service>> {
         if (this.processError) {
             try {
@@ -454,28 +489,28 @@ export class Backend implements backendInterface {
     async saveCallerUserProfile(arg0: UserProfile): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.saveCallerUserProfile(to_candid_UserProfile_n25(this._uploadFile, this._downloadFile, arg0));
+                const result = await this.actor.saveCallerUserProfile(to_candid_UserProfile_n28(this._uploadFile, this._downloadFile, arg0));
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.saveCallerUserProfile(to_candid_UserProfile_n25(this._uploadFile, this._downloadFile, arg0));
+            const result = await this.actor.saveCallerUserProfile(to_candid_UserProfile_n28(this._uploadFile, this._downloadFile, arg0));
             return result;
         }
     }
     async updateBookingStatus(arg0: bigint, arg1: BookingStatus): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.updateBookingStatus(arg0, to_candid_BookingStatus_n29(this._uploadFile, this._downloadFile, arg1));
+                const result = await this.actor.updateBookingStatus(arg0, to_candid_BookingStatus_n32(this._uploadFile, this._downloadFile, arg1));
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.updateBookingStatus(arg0, to_candid_BookingStatus_n29(this._uploadFile, this._downloadFile, arg1));
+            const result = await this.actor.updateBookingStatus(arg0, to_candid_BookingStatus_n32(this._uploadFile, this._downloadFile, arg1));
             return result;
         }
     }
@@ -499,6 +534,9 @@ function from_candid_BookingStatus_n8(_uploadFile: (file: ExternalBlob) => Promi
 }
 function from_candid_Booking_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _Booking): Booking {
     return from_candid_record_n7(_uploadFile, _downloadFile, value);
+}
+function from_candid_ProfessionalInfo_n26(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _ProfessionalInfo): ProfessionalInfo {
+    return from_candid_record_n27(_uploadFile, _downloadFile, value);
 }
 function from_candid_ProfessionalProfile_n17(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _ProfessionalProfile): ProfessionalProfile {
     return from_candid_record_n18(_uploadFile, _downloadFile, value);
@@ -570,6 +608,21 @@ function from_candid_record_n24(_uploadFile: (file: ExternalBlob) => Promise<Uin
         maxPrice: value.maxPrice,
         category: from_candid_ServiceCategory_n19(_uploadFile, _downloadFile, value.category),
         minPrice: value.minPrice
+    };
+}
+function from_candid_record_n27(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    principal: Principal;
+    displayName: string;
+    category: _ServiceCategory;
+}): {
+    principal: Principal;
+    displayName: string;
+    category: ServiceCategory;
+} {
+    return {
+        principal: value.principal,
+        displayName: value.displayName,
+        category: from_candid_ServiceCategory_n19(_uploadFile, _downloadFile, value.category)
     };
 }
 function from_candid_record_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
@@ -645,20 +698,23 @@ function from_candid_variant_n9(_uploadFile: (file: ExternalBlob) => Promise<Uin
 function from_candid_vec_n22(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_Service>): Array<Service> {
     return value.map((x)=>from_candid_Service_n23(_uploadFile, _downloadFile, x));
 }
+function from_candid_vec_n25(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_ProfessionalInfo>): Array<ProfessionalInfo> {
+    return value.map((x)=>from_candid_ProfessionalInfo_n26(_uploadFile, _downloadFile, x));
+}
 function from_candid_vec_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_Booking>): Array<Booking> {
     return value.map((x)=>from_candid_Booking_n6(_uploadFile, _downloadFile, x));
 }
-function to_candid_BookingStatus_n29(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: BookingStatus): _BookingStatus {
-    return to_candid_variant_n30(_uploadFile, _downloadFile, value);
+function to_candid_BookingStatus_n32(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: BookingStatus): _BookingStatus {
+    return to_candid_variant_n33(_uploadFile, _downloadFile, value);
 }
-function to_candid_ProfessionalProfile_n27(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: ProfessionalProfile): _ProfessionalProfile {
-    return to_candid_record_n28(_uploadFile, _downloadFile, value);
+function to_candid_ProfessionalProfile_n30(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: ProfessionalProfile): _ProfessionalProfile {
+    return to_candid_record_n31(_uploadFile, _downloadFile, value);
 }
 function to_candid_ServiceCategory_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: ServiceCategory): _ServiceCategory {
     return to_candid_variant_n2(_uploadFile, _downloadFile, value);
 }
-function to_candid_UserProfile_n25(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserProfile): _UserProfile {
-    return to_candid_record_n26(_uploadFile, _downloadFile, value);
+function to_candid_UserProfile_n28(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserProfile): _UserProfile {
+    return to_candid_record_n29(_uploadFile, _downloadFile, value);
 }
 function to_candid_UserRole_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): _UserRole {
     return to_candid_variant_n4(_uploadFile, _downloadFile, value);
@@ -666,7 +722,7 @@ function to_candid_UserRole_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint
 function to_candid_opt_n21(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: ServiceCategory | null): [] | [_ServiceCategory] {
     return value === null ? candid_none() : candid_some(to_candid_ServiceCategory_n1(_uploadFile, _downloadFile, value));
 }
-function to_candid_record_n26(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function to_candid_record_n29(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     role: UserRole;
     professional?: ProfessionalProfile;
 }): {
@@ -675,10 +731,10 @@ function to_candid_record_n26(_uploadFile: (file: ExternalBlob) => Promise<Uint8
 } {
     return {
         role: to_candid_UserRole_n3(_uploadFile, _downloadFile, value.role),
-        professional: value.professional ? candid_some(to_candid_ProfessionalProfile_n27(_uploadFile, _downloadFile, value.professional)) : candid_none()
+        professional: value.professional ? candid_some(to_candid_ProfessionalProfile_n30(_uploadFile, _downloadFile, value.professional)) : candid_none()
     };
 }
-function to_candid_record_n28(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function to_candid_record_n31(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     displayName: string;
     category: ServiceCategory;
 }): {
@@ -717,7 +773,7 @@ function to_candid_variant_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8
         computerSales: null
     } : value;
 }
-function to_candid_variant_n30(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: BookingStatus): {
+function to_candid_variant_n33(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: BookingStatus): {
     cancelled: null;
 } | {
     pending: null;

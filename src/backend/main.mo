@@ -5,9 +5,7 @@ import Principal "mo:core/Principal";
 import Runtime "mo:core/Runtime";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
-import Migration "migration";
 
-(with migration = Migration.run)
 actor {
   public type UserRole = AccessControl.UserRole;
 
@@ -65,6 +63,12 @@ actor {
     totalBookings : Nat;
     totalCompletedBookings : Nat;
     totalRevenue : Nat;
+  };
+
+  public type ProfessionalInfo = {
+    principal : Principal;
+    displayName : Text;
+    category : ServiceCategory;
   };
 
   let accessControlState = AccessControl.initState();
@@ -244,7 +248,7 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can create bookings");
     };
-    
+
     switch (users.get(caller)) {
       case (null) { Runtime.trap("User not registered") };
       case (?profile) {
@@ -280,7 +284,7 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can view their bookings");
     };
-    
+
     let result = List.empty<Booking>();
     for ((_, booking) in bookings.entries()) {
       if (booking.customer == caller) {
@@ -294,7 +298,7 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can cancel bookings");
     };
-    
+
     switch (bookings.get(bookingId)) {
       case (null) { Runtime.trap("Booking not found") };
       case (?booking) {
@@ -315,7 +319,7 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can view assigned bookings");
     };
-    
+
     switch (users.get(caller)) {
       case (null) { Runtime.trap("User not registered") };
       case (?profile) {
@@ -344,7 +348,7 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can update booking status");
     };
-    
+
     switch (users.get(caller)) {
       case (null) { Runtime.trap("User not registered") };
       case (?profile) {
@@ -390,7 +394,7 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can assign bookings");
     };
-    
+
     switch (users.get(professional)) {
       case (null) { Runtime.trap("Professional not found") };
       case (?profile) {
@@ -401,7 +405,7 @@ actor {
               case (null) { Runtime.trap("Booking not found") };
               case (?booking) {
                 let updatedBooking = {
-                  booking with 
+                  booking with
                   assignedProfessional = ?professional;
                   status = #confirmed;
                 };
@@ -419,7 +423,7 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can view platform stats");
     };
-    
+
     {
       totalUsers = users.size();
       totalProfessionals = getTotalProfessionals();
@@ -434,7 +438,7 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can initialize");
     };
-    
+
     if (isInitialized) { Runtime.trap("Already initialized") };
 
     let initialServices : [Service] = [
@@ -542,5 +546,37 @@ actor {
 
     nextServiceId := 13;
     isInitialized := true;
+  };
+
+  // Admin Only: Get All Bookings
+  public query ({ caller }) func getAllBookings() : async [Booking] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can view all bookings");
+    };
+    bookings.values().toArray();
+  };
+
+  // Admin Only: List Professionals
+  public query ({ caller }) func listProfessionals() : async [ProfessionalInfo] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can list professionals");
+    };
+
+    let result = List.empty<ProfessionalInfo>();
+
+    for ((principal, userProfile) in users.entries()) {
+      switch (userProfile.professional) {
+        case (?professional) {
+          result.add({
+            principal;
+            displayName = professional.displayName;
+            category = professional.category;
+          });
+        };
+        case (null) {};
+      };
+    };
+
+    result.toArray();
   };
 };

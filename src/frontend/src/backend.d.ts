@@ -19,6 +19,18 @@ export interface ProfessionalProfile {
     displayName: string;
     category: ServiceCategory;
 }
+export interface ProfessionalInfo {
+    principal: Principal;
+    displayName: string;
+    category: ServiceCategory;
+}
+export interface PlatformStats {
+    totalProfessionals: bigint;
+    totalBookings: bigint;
+    totalUsers: bigint;
+    totalRevenue: bigint;
+    totalCompletedBookings: bigint;
+}
 export interface Booking {
     id: bigint;
     status: BookingStatus;
@@ -29,13 +41,6 @@ export interface Booking {
     address: string;
     serviceId: bigint;
     timeSlot: string;
-}
-export interface PlatformStats {
-    totalProfessionals: bigint;
-    totalBookings: bigint;
-    totalUsers: bigint;
-    totalRevenue: bigint;
-    totalCompletedBookings: bigint;
 }
 export interface UserProfile {
     role: UserRole;
@@ -67,6 +72,7 @@ export interface backendInterface {
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     cancelBooking(bookingId: bigint): Promise<void>;
     createBooking(serviceId: bigint, date: string, timeSlot: string, address: string): Promise<bigint>;
+    getAllBookings(): Promise<Array<Booking>>;
     getAssignedBookings(): Promise<Array<Booking>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
@@ -77,6 +83,7 @@ export interface backendInterface {
     initialize(): Promise<void>;
     isAdminCaller(): Promise<boolean>;
     isCallerAdmin(): Promise<boolean>;
+    listProfessionals(): Promise<Array<ProfessionalInfo>>;
     listServices(): Promise<Array<Service>>;
     registerCustomer(): Promise<void>;
     registerProfessional(displayName: string, category: ServiceCategory): Promise<void>;

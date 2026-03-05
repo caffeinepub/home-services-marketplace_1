@@ -62,6 +62,11 @@ export const Service = IDL.Record({
   'category' : ServiceCategory,
   'minPrice' : IDL.Nat,
 });
+export const ProfessionalInfo = IDL.Record({
+  'principal' : IDL.Principal,
+  'displayName' : IDL.Text,
+  'category' : ServiceCategory,
+});
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
@@ -78,6 +83,7 @@ export const idlService = IDL.Service({
       [IDL.Nat],
       [],
     ),
+  'getAllBookings' : IDL.Func([], [IDL.Vec(Booking)], ['query']),
   'getAssignedBookings' : IDL.Func([], [IDL.Vec(Booking)], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
@@ -96,6 +102,7 @@ export const idlService = IDL.Service({
   'initialize' : IDL.Func([], [], []),
   'isAdminCaller' : IDL.Func([], [IDL.Bool], ['query']),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+  'listProfessionals' : IDL.Func([], [IDL.Vec(ProfessionalInfo)], ['query']),
   'listServices' : IDL.Func([], [IDL.Vec(Service)], ['query']),
   'registerCustomer' : IDL.Func([], [], []),
   'registerProfessional' : IDL.Func([IDL.Text, ServiceCategory], [], []),
@@ -166,6 +173,11 @@ export const idlFactory = ({ IDL }) => {
     'category' : ServiceCategory,
     'minPrice' : IDL.Nat,
   });
+  const ProfessionalInfo = IDL.Record({
+    'principal' : IDL.Principal,
+    'displayName' : IDL.Text,
+    'category' : ServiceCategory,
+  });
   
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
@@ -182,6 +194,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Nat],
         [],
       ),
+    'getAllBookings' : IDL.Func([], [IDL.Vec(Booking)], ['query']),
     'getAssignedBookings' : IDL.Func([], [IDL.Vec(Booking)], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
@@ -200,6 +213,7 @@ export const idlFactory = ({ IDL }) => {
     'initialize' : IDL.Func([], [], []),
     'isAdminCaller' : IDL.Func([], [IDL.Bool], ['query']),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+    'listProfessionals' : IDL.Func([], [IDL.Vec(ProfessionalInfo)], ['query']),
     'listServices' : IDL.Func([], [IDL.Vec(Service)], ['query']),
     'registerCustomer' : IDL.Func([], [], []),
     'registerProfessional' : IDL.Func([IDL.Text, ServiceCategory], [], []),

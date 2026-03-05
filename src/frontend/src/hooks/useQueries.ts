@@ -1,8 +1,10 @@
+import type { Principal } from "@icp-sdk/core/principal";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   type Booking,
   BookingStatus,
   type PlatformStats,
+  type ProfessionalInfo,
   type Service,
   ServiceCategory,
   type UserProfile,
@@ -301,6 +303,56 @@ export function useRemoveService() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.services });
       void queryClient.invalidateQueries({ queryKey: queryKeys.platformStats });
+    },
+  });
+}
+
+// ─── Admin Bookings ───────────────────────────────────────────────────────────
+export function useAllBookings() {
+  const { actor, isFetching } = useActor();
+  return useQuery<Booking[]>({
+    queryKey: ["bookings", "all"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getAllBookings();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useListProfessionals() {
+  const { actor, isFetching } = useActor();
+  return useQuery<ProfessionalInfo[]>({
+    queryKey: ["professionals", "all"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.listProfessionals();
+    },
+    enabled: !!actor && !isFetching,
+    staleTime: 30_000,
+  });
+}
+
+export function useAssignBookingToProfessional() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      bookingId,
+      professional,
+    }: {
+      bookingId: bigint;
+      professional: Principal;
+    }) => {
+      if (!actor) throw new Error("Not connected");
+      return actor.assignBookingToProfessional(bookingId, professional);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["bookings", "all"] });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.platformStats,
+      });
     },
   });
 }

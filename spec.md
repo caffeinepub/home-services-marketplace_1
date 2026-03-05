@@ -1,41 +1,41 @@
-# Computer Sales & Services Marketplace
+# Computer Sales & Services
 
 ## Current State
-- A home services marketplace with categories: Cleaning, Plumbing, Electrician, Carpentry, Painting, AC Repair
-- Landing page hero text and content reference "home services" and homeowners
-- Services page has seed data for home-related services
-- Professional Dashboard shows a flat list of active/completed jobs
-- Admin Panel manages services and shows platform stats
-- Registration page allows choosing Customer or Professional role with home-service categories
-- Backend categories are: #cleaning, #plumbing, #electrician, #carpentry, #painting, #acRepair
+
+- Landing page with computer/tech branding, 6 service categories
+- Services page with category filters and booking modal
+- Customer Dashboard: upcoming/past bookings, cancel pending bookings
+- Professional Dashboard: Kanban board (New Orders / In Progress / Completed), earnings panel
+- Admin Panel: platform stats (5 cards), services management (CRUD table), placeholder note for bookings management
+- Role-based routing: customer, professional, admin
+- Backend supports: service CRUD, booking creation/cancellation, assignment to professional, status transitions, platform stats
+- Backend does NOT have: getAllBookings (admin), listProfessionals (admin)
 
 ## Requested Changes (Diff)
 
 ### Add
-- Professional Dashboard: Kanban-style job board with columns — New Orders, In Progress, Completed — for technicians to drag/click-move jobs between stages
-- Professional Dashboard: Earnings analytics panel showing total earnings (calculated from job prices), jobs completed count, and a simple earnings summary
-- New service categories for computers: laptopRepair, desktopRepair, computerSales, accessoriesSales, networkSetup, dataRecovery
-- Seed data for computer/laptop/accessories services in ServicesPage and backend initialize()
+- Backend: `getAllBookings()` query - admin-only, returns all bookings in the system
+- Backend: `listProfessionals()` query - admin-only, returns all registered professionals with their Principal and profile
+- Frontend: Admin Bookings Management section inside AdminPanel replacing the current placeholder note
+  - Table of all bookings with columns: ID, Service, Customer (shortened principal), Date/Time, Status badge, Assigned Technician, Actions
+  - Filter tabs: All / Pending / Confirmed / In Progress / Completed / Cancelled
+  - "Assign Technician" action on each pending/unassigned booking - opens a dialog with a dropdown of available technicians to select from
+  - Status badge coloring matching existing status classes
+  - Loading, empty, and error states
 
 ### Modify
-- LandingPage: Rebrand all text to computer sales & services context. Hero title, subtitle, stats labels (e.g. "Happy Customers", "Certified Technicians"), features section ("Certified Technicians", "Same-Day Service", "Warranty on Repairs"), CTA text
-- LandingPage: Update 6 category cards with computer categories and appropriate icons (Laptop, Monitor, Mouse, Wifi, HardDrive, Database)
-- ServicesPage: Update category tabs and seed services to reflect computer/laptop/accessories services
-- AdminPanel: Update category list to computer categories in service form dropdown
-- RegistrationPage: Update professional category options to computer service categories
-- ProfessionalDashboard: Replace flat job list with Kanban columns (New / In Progress / Completed). Each job card shows service name, customer, date, price range. Action button moves job to next stage
-- ProfessionalDashboard: Add earnings panel at top showing total earned (sum of maxPrice for completed jobs as estimate), count of completed jobs, and count of active jobs
-- Backend: Replace home-service categories with computer-service categories. Update initialize() seed data with computer services
+- AdminPanel.tsx: Replace the "Bookings Note" placeholder section with the new full Bookings Management section
 
 ### Remove
-- All references to cleaning, plumbing, painting, carpentry, AC repair, electrician in categories and seed data
-- "homeowners" language on landing page
+- The placeholder note/card about bookings in the Admin Panel
 
 ## Implementation Plan
-1. Regenerate Motoko backend with new computer service categories (laptopRepair, desktopRepair, computerSales, accessoriesSales, networkSetup, dataRecovery) and updated seed data
-2. Update LandingPage: new copy, computer category cards with correct icons
-3. Update ServicesPage: new category list, new seed services for computers/laptops/accessories
-4. Update AdminPanel: new category dropdown items and labels
-5. Update RegistrationPage: new professional categories
-6. Rebuild ProfessionalDashboard with Kanban columns and earnings analytics
-7. Update useQueries.ts getCategoryLabel helper for new categories
+
+1. Add `getAllBookings` (admin-only) and `listProfessionals` (admin-only) to `main.mo`
+2. Re-generate Motoko code to update `backend.d.ts` with new APIs
+3. Add `useAllBookings`, `useListProfessionals`, and `useAssignBooking` hooks to `useQueries.ts`
+4. Build the Bookings Management section in `AdminPanel.tsx`:
+   - Filter tabs for booking status
+   - Bookings table with all columns
+   - Assign Technician dialog with professional dropdown
+   - Loading/empty/error states with data-ocid markers

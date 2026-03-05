@@ -33,6 +33,11 @@ export interface PlatformStats {
   'totalRevenue' : bigint,
   'totalCompletedBookings' : bigint,
 }
+export interface ProfessionalInfo {
+  'principal' : Principal,
+  'displayName' : string,
+  'category' : ServiceCategory,
+}
 export interface ProfessionalProfile {
   'displayName' : string,
   'category' : ServiceCategory,
@@ -68,6 +73,7 @@ export interface _SERVICE {
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'cancelBooking' : ActorMethod<[bigint], undefined>,
   'createBooking' : ActorMethod<[bigint, string, string, string], bigint>,
+  'getAllBookings' : ActorMethod<[], Array<Booking>>,
   'getAssignedBookings' : ActorMethod<[], Array<Booking>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
@@ -81,6 +87,7 @@ export interface _SERVICE {
   'initialize' : ActorMethod<[], undefined>,
   'isAdminCaller' : ActorMethod<[], boolean>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
+  'listProfessionals' : ActorMethod<[], Array<ProfessionalInfo>>,
   'listServices' : ActorMethod<[], Array<Service>>,
   'registerCustomer' : ActorMethod<[], undefined>,
   'registerProfessional' : ActorMethod<[string, ServiceCategory], undefined>,
