@@ -2,40 +2,53 @@
 
 ## Current State
 
-- Landing page with computer/tech branding, 6 service categories
-- Services page with category filters and booking modal
-- Customer Dashboard: upcoming/past bookings, cancel pending bookings
-- Professional Dashboard: Kanban board (New Orders / In Progress / Completed), earnings panel
-- Admin Panel: platform stats (5 cards), services management (CRUD table), placeholder note for bookings management
-- Role-based routing: customer, professional, admin
-- Backend supports: service CRUD, booking creation/cancellation, assignment to professional, status transitions, platform stats
-- Backend does NOT have: getAllBookings (admin), listProfessionals (admin)
+- Landing page with hero, 6 category cards, stats bar
+- Services page with category filter, service cards, booking modal
+- Role-based routing: Customer, Professional, Admin
+- Customer Dashboard: upcoming/past bookings, cancel pending orders
+- Professional Dashboard: Kanban board (New / In Progress / Completed), earnings panel
+- Admin Panel:
+  - Platform stats (Total Users, Technicians, Total Bookings, Completed, Revenue)
+  - Services Management: full CRUD (add, edit, delete)
+  - Bookings Management: filter by status, assign/reassign technician via dropdown dialog
 
 ## Requested Changes (Diff)
 
 ### Add
-- Backend: `getAllBookings()` query - admin-only, returns all bookings in the system
-- Backend: `listProfessionals()` query - admin-only, returns all registered professionals with their Principal and profile
-- Frontend: Admin Bookings Management section inside AdminPanel replacing the current placeholder note
-  - Table of all bookings with columns: ID, Service, Customer (shortened principal), Date/Time, Status badge, Assigned Technician, Actions
-  - Filter tabs: All / Pending / Confirmed / In Progress / Completed / Cancelled
-  - "Assign Technician" action on each pending/unassigned booking - opens a dialog with a dropdown of available technicians to select from
-  - Status badge coloring matching existing status classes
-  - Loading, empty, and error states
+
+**Admin Panel - Technicians Management section:**
+- List all registered technicians (from `listProfessionals()`) with name, specialization/category, and assigned job count (derived from all bookings)
+- Promote any regular user to Admin via `assignCallerUserRole()` -- for managing user roles
+- Show each technician's active jobs count (bookings in `inProgress` or `confirmed` status assigned to them)
+
+**Admin Panel - Platform Analytics section:**
+- Booking status breakdown: visual summary (counts per status) displayed as stat bars/cards
+- Category breakdown: how many bookings per service category (derived from bookings + services)
+- Quick revenue estimate: completed bookings * average service price
+
+**Admin Panel - Enhanced Bookings view:**
+- Add address column to the bookings table
+- Add "Update Status" action alongside Assign button so admin can manually change booking status from the panel
+- Show booking creation date/time
+
+**Admin Panel - Section navigation sidebar or tabs:**
+- Since the panel now has 4 sections (Overview, Services, Bookings, Technicians), add a left sidebar nav or tab bar to switch between sections cleanly instead of one long scrolling page
 
 ### Modify
-- AdminPanel.tsx: Replace the "Bookings Note" placeholder section with the new full Bookings Management section
+
+- Admin Panel layout: convert from single scrolling page to tabbed/sidebar navigation with sections: Overview, Services, Bookings, Technicians
+- Bookings table: add address column, booking date column, and Update Status action
+- Stats section: add booking breakdown analytics below the stat cards
 
 ### Remove
-- The placeholder note/card about bookings in the Admin Panel
+
+- Nothing removed
 
 ## Implementation Plan
 
-1. Add `getAllBookings` (admin-only) and `listProfessionals` (admin-only) to `main.mo`
-2. Re-generate Motoko code to update `backend.d.ts` with new APIs
-3. Add `useAllBookings`, `useListProfessionals`, and `useAssignBooking` hooks to `useQueries.ts`
-4. Build the Bookings Management section in `AdminPanel.tsx`:
-   - Filter tabs for booking status
-   - Bookings table with all columns
-   - Assign Technician dialog with professional dropdown
-   - Loading/empty/error states with data-ocid markers
+1. Update `AdminPanel.tsx` to support multi-section layout with a left sidebar navigation (Overview, Services, Bookings, Technicians)
+2. Build Technicians section: table of professionals with name, category, job counts (active/completed)
+3. Build Analytics subsection within Overview: booking status breakdown + category breakdown bars
+4. Enhance Bookings table: add address, created-at, and Update Status dialog
+5. Add `useUpdateBookingStatus` mutation (already exists in useQueries) wired to admin panel for status override
+6. All new interactive elements get proper `data-ocid` markers
