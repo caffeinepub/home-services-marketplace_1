@@ -10,6 +10,7 @@ import {
 import { Navbar } from "./components/Navbar";
 import { AdminPanel } from "./pages/AdminPanel";
 import { CustomerDashboard } from "./pages/CustomerDashboard";
+import { DemoPage } from "./pages/DemoPage";
 import { LandingPage } from "./pages/LandingPage";
 import { PostLoginRouter } from "./pages/PostLoginRouter";
 import { ProfessionalDashboard } from "./pages/ProfessionalDashboard";
@@ -85,6 +86,12 @@ const adminPanelRoute = createRoute({
   component: AdminPanel,
 });
 
+const demoRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/demo",
+  component: DemoPage,
+});
+
 const catchAllRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "*",
@@ -99,6 +106,7 @@ const routeTree = rootRoute.addChildren([
   customerDashboardRoute,
   professionalDashboardRoute,
   adminPanelRoute,
+  demoRoute,
   catchAllRoute,
 ]);
 

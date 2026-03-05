@@ -10,14 +10,18 @@ import {
   Laptop,
   Monitor,
   Mouse,
+  PlusCircle,
   Search,
   ShoppingCart,
   Wifi,
+  XCircle,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { type Service, ServiceCategory } from "../backend.d";
 import { BookingModal } from "../components/BookingModal";
+import { CompareBar } from "../components/CompareBar";
+import { CompareModal } from "../components/CompareModal";
 import {
   formatPriceRange,
   getCategoryLabel,
@@ -170,7 +174,17 @@ function ServiceCard({
   service,
   index,
   onBook,
-}: { service: Service; index: number; onBook: (service: Service) => void }) {
+  isInCompare,
+  onToggleCompare,
+  compareDisabled,
+}: {
+  service: Service;
+  index: number;
+  onBook: (service: Service) => void;
+  isInCompare: boolean;
+  onToggleCompare: (service: Service) => void;
+  compareDisabled: boolean;
+}) {
   const Icon = categoryIcons[service.category] ?? Laptop;
   const bgColor = categoryColors[service.category] ?? "oklch(0.94 0.01 250)";
 
@@ -180,7 +194,11 @@ function ServiceCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.96 }}
       transition={{ delay: index * 0.05, duration: 0.3 }}
-      className="service-card bg-card border border-border rounded-2xl overflow-hidden flex flex-col"
+      className={`service-card bg-card border rounded-2xl overflow-hidden flex flex-col transition-all duration-200 ${
+        isInCompare
+          ? "border-primary ring-2 ring-primary/30 shadow-md shadow-primary/10"
+          : "border-border"
+      }`}
     >
       {/* Category color bar */}
       <div
@@ -233,6 +251,33 @@ function ServiceCard({
             Book Now
           </Button>
         </div>
+
+        {/* Compare Toggle */}
+        <button
+          type="button"
+          data-ocid={`services.compare_toggle.${index + 1}`}
+          onClick={() => onToggleCompare(service)}
+          disabled={!isInCompare && compareDisabled}
+          className={`flex items-center justify-center gap-1.5 w-full py-1.5 px-3 rounded-lg text-xs font-medium transition-all duration-150 border ${
+            isInCompare
+              ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/15"
+              : compareDisabled
+                ? "border-border text-muted-foreground/40 cursor-not-allowed bg-transparent"
+                : "border-border text-muted-foreground hover:border-primary/40 hover:text-primary hover:bg-primary/5 bg-transparent"
+          }`}
+        >
+          {isInCompare ? (
+            <>
+              <XCircle className="w-3.5 h-3.5" />
+              Remove from Compare
+            </>
+          ) : (
+            <>
+              <PlusCircle className="w-3.5 h-3.5" />
+              {compareDisabled ? "Compare full (3/3)" : "Add to Compare"}
+            </>
+          )}
+        </button>
       </div>
     </motion.div>
   );
@@ -245,6 +290,10 @@ export function ServicesPage() {
   );
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [bookingOpen, setBookingOpen] = useState(false);
+
+  // Compare state
+  const [compareList, setCompareList] = useState<Service[]>([]);
+  const [compareModalOpen, setCompareModalOpen] = useState(false);
 
   const { data: fetchedServices, isLoading, isError } = useListServices();
 
@@ -264,8 +313,26 @@ export function ServicesPage() {
     setBookingOpen(true);
   };
 
+  const handleToggleCompare = (service: Service) => {
+    setCompareList((prev) => {
+      const isIn = prev.some((s) => s.id === service.id);
+      if (isIn) return prev.filter((s) => s.id !== service.id);
+      if (prev.length >= 3) return prev;
+      return [...prev, service];
+    });
+  };
+
+  const handleRemoveFromCompare = (serviceId: bigint) => {
+    setCompareList((prev) => prev.filter((s) => s.id !== serviceId));
+  };
+
+  const handleClearCompare = () => {
+    setCompareList([]);
+    setCompareModalOpen(false);
+  };
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-24">
       {/* Page Header */}
       <div className="bg-card border-b border-border">
         <div className="container mx-auto px-4 py-8">
@@ -369,6 +436,12 @@ export function ServicesPage() {
                     service={service}
                     index={i}
                     onBook={handleBook}
+                    isInCompare={compareList.some((s) => s.id === service.id)}
+                    onToggleCompare={handleToggleCompare}
+                    compareDisabled={
+                      compareList.length >= 3 &&
+                      !compareList.some((s) => s.id === service.id)
+                    }
                   />
                 ))}
               </div>
@@ -382,6 +455,25 @@ export function ServicesPage() {
         onClose={() => {
           setBookingOpen(false);
           setSelectedService(null);
+        }}
+      />
+
+      {/* Compare Bar */}
+      <CompareBar
+        compareList={compareList}
+        onRemove={handleRemoveFromCompare}
+        onClear={handleClearCompare}
+        onCompare={() => setCompareModalOpen(true)}
+      />
+
+      {/* Compare Modal */}
+      <CompareModal
+        services={compareList}
+        open={compareModalOpen}
+        onClose={() => setCompareModalOpen(false)}
+        onBook={(svc) => {
+          setSelectedService(svc);
+          setBookingOpen(true);
         }}
       />
     </div>

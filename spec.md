@@ -1,54 +1,35 @@
 # Computer Sales & Services
 
 ## Current State
-
-- Landing page with hero, 6 category cards, stats bar
-- Services page with category filter, service cards, booking modal
-- Role-based routing: Customer, Professional, Admin
-- Customer Dashboard: upcoming/past bookings, cancel pending orders
-- Professional Dashboard: Kanban board (New / In Progress / Completed), earnings panel
-- Admin Panel:
-  - Platform stats (Total Users, Technicians, Total Bookings, Completed, Revenue)
-  - Services Management: full CRUD (add, edit, delete)
-  - Bookings Management: filter by status, assign/reassign technician via dropdown dialog
+Full-stack marketplace for computer sales and services with:
+- Landing page with 6 service categories
+- Services page with booking modal
+- Role-based dashboards: Customer (bookings), Professional (Kanban), Admin (full panel)
+- Admin Panel with sidebar nav: Overview (stats + analytics), Services CRUD, Bookings management, Technicians list
+- Backend APIs for services, bookings, professionals, platform stats
 
 ## Requested Changes (Diff)
 
 ### Add
-
-**Admin Panel - Technicians Management section:**
-- List all registered technicians (from `listProfessionals()`) with name, specialization/category, and assigned job count (derived from all bookings)
-- Promote any regular user to Admin via `assignCallerUserRole()` -- for managing user roles
-- Show each technician's active jobs count (bookings in `inProgress` or `confirmed` status assigned to them)
-
-**Admin Panel - Platform Analytics section:**
-- Booking status breakdown: visual summary (counts per status) displayed as stat bars/cards
-- Category breakdown: how many bookings per service category (derived from bookings + services)
-- Quick revenue estimate: completed bookings * average service price
-
-**Admin Panel - Enhanced Bookings view:**
-- Add address column to the bookings table
-- Add "Update Status" action alongside Assign button so admin can manually change booking status from the panel
-- Show booking creation date/time
-
-**Admin Panel - Section navigation sidebar or tabs:**
-- Since the panel now has 4 sections (Overview, Services, Bookings, Technicians), add a left sidebar nav or tab bar to switch between sections cleanly instead of one long scrolling page
+- **Service Comparison Tool** on Services page: users can select up to 3 services to compare side-by-side (name, category, price range, description). A "Compare" toggle button on each service card; floating comparison bar at bottom shows selected count and opens a comparison modal/drawer.
+- **Enhanced Booking Calendar** on the booking modal: replace the plain date text input with a visual calendar date picker (using a calendar component) with time slot selection (Morning/Afternoon/Evening radio buttons). Already has timeSlot field in backend.
+- **Demo Credentials Page** (`/demo`) accessible from navbar and landing page: shows demo login info for Admin, Customer, and Technician roles in a clean card layout. Since the app uses Internet Identity (no username/password), the page explains the role system and shows what each role can access, plus a note that role assignment is done by admin after first login. Includes a table of features per role.
 
 ### Modify
-
-- Admin Panel layout: convert from single scrolling page to tabbed/sidebar navigation with sections: Overview, Services, Bookings, Technicians
-- Bookings table: add address column, booking date column, and Update Status action
-- Stats section: add booking breakdown analytics below the stat cards
+- ServicesPage: add comparison toggle button to each service card and a fixed comparison bar at the bottom.
+- BookingModal: upgrade date input to a proper calendar date picker and improve time slot UI to radio buttons with labels.
+- Navbar: add "Demo Credentials" link.
+- LandingPage: add a "View Demo" or "Try the Demo" CTA that links to `/demo`.
 
 ### Remove
-
-- Nothing removed
+- Nothing removed.
 
 ## Implementation Plan
-
-1. Update `AdminPanel.tsx` to support multi-section layout with a left sidebar navigation (Overview, Services, Bookings, Technicians)
-2. Build Technicians section: table of professionals with name, category, job counts (active/completed)
-3. Build Analytics subsection within Overview: booking status breakdown + category breakdown bars
-4. Enhance Bookings table: add address, created-at, and Update Status dialog
-5. Add `useUpdateBookingStatus` mutation (already exists in useQueries) wired to admin panel for status override
-6. All new interactive elements get proper `data-ocid` markers
+1. Create `src/frontend/src/pages/DemoPage.tsx` — roles table with feature access matrix, login flow explanation.
+2. Create `src/frontend/src/components/CompareBar.tsx` — floating bottom bar showing selected services for comparison.
+3. Create `src/frontend/src/components/CompareModal.tsx` — side-by-side comparison table dialog.
+4. Modify `ServicesPage.tsx` — add compare state, compare toggle button on each card, render CompareBar + CompareModal.
+5. Modify `BookingModal.tsx` — replace date text input with Calendar component + radio time slot buttons.
+6. Modify `App.tsx` — add `/demo` route.
+7. Modify `Navbar.tsx` — add Demo Credentials nav link.
+8. Modify `LandingPage.tsx` — add "Try Demo" CTA button linking to `/demo`.

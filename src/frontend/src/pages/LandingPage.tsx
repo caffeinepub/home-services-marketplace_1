@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight,
   Clock,
+  FlaskConical,
   HardDrive,
   Laptop,
   Monitor,
@@ -157,6 +158,16 @@ export function LandingPage() {
                 >
                   Browse Services
                   <ArrowRight className="w-5 h-5" />
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  data-ocid="landing.demo_button"
+                  onClick={() => void navigate({ to: "/demo" })}
+                  className="gap-2 text-base font-semibold border-white/30 text-white hover:bg-white/10 hover:text-white bg-transparent"
+                >
+                  <FlaskConical className="w-5 h-5" />
+                  View Demo Guide
                 </Button>
               </div>
             </motion.div>
