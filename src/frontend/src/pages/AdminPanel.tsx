@@ -51,17 +51,23 @@ import {
   Briefcase,
   CalendarCheck,
   CheckSquare,
+  CreditCard,
+  Database,
   DollarSign,
+  Info,
   Loader2,
+  Palette,
   Pencil,
   Plus,
   RefreshCw,
+  Shield,
   ShieldCheck,
   Trash2,
   TrendingUp,
   UserCheck,
   Users,
   Wrench,
+  X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
@@ -79,15 +85,20 @@ import {
   getStatusLabel,
   shortenPrincipal,
   useAddService,
+  useAdminRemoveUser,
+  useAdminUpdateBookingStatus,
   useAllBookings,
+  useAllCustomers,
   useAssignBookingToProfessional,
   useListProfessionals,
   useListServices,
   usePlatformStats,
   useRemoveService,
-  useUpdateBookingStatus,
   useUpdateService,
 } from "../hooks/useQueries";
+import { BrandingManager } from "./BrandingManager";
+import { DatabaseSchema } from "./DatabaseSchema";
+import { PaymentsSection } from "./PaymentsSection";
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 const ALL_CATEGORIES = [
@@ -108,7 +119,15 @@ const ALL_STATUSES = [
 ];
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
-type AdminSection = "overview" | "services" | "bookings" | "technicians";
+type AdminSection =
+  | "overview"
+  | "services"
+  | "bookings"
+  | "payments"
+  | "users"
+  | "technicians"
+  | "branding"
+  | "database";
 
 type ServiceFormData = {
   name: string;
@@ -330,7 +349,7 @@ function ServiceFormModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="min-price">Min Price ($)</Label>
+              <Label htmlFor="min-price">Min Price (₹)</Label>
               <Input
                 id="min-price"
                 type="number"
@@ -345,7 +364,7 @@ function ServiceFormModal({
               )}
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="max-price">Max Price ($)</Label>
+              <Label htmlFor="max-price">Max Price (₹)</Label>
               <Input
                 id="max-price"
                 type="number"
@@ -533,7 +552,7 @@ interface UpdateStatusDialogProps {
 }
 
 function UpdateStatusDialog({ booking, onClose }: UpdateStatusDialogProps) {
-  const updateStatus = useUpdateBookingStatus();
+  const updateStatus = useAdminUpdateBookingStatus();
   const [selectedStatus, setSelectedStatus] = useState<BookingStatus | "">(
     booking?.status ?? "",
   );
@@ -709,6 +728,7 @@ interface OverviewSectionProps {
 function OverviewSection({ services }: OverviewSectionProps) {
   const { data: stats, isLoading: statsLoading } = usePlatformStats();
   const { data: bookings } = useAllBookings();
+  const [showQuickStart, setShowQuickStart] = useState(true);
 
   // Booking status breakdown
   const totalBookings = bookings?.length ?? 0;
@@ -745,6 +765,117 @@ function OverviewSection({ services }: OverviewSectionProps) {
 
   return (
     <section data-ocid="admin.overview.section" className="space-y-8">
+      {/* Quick Start Card */}
+      <AnimatePresence>
+        {showQuickStart && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+            transition={{ duration: 0.25 }}
+            data-ocid="admin.quick_start.panel"
+            className="rounded-xl border border-primary/30 bg-primary/5 p-5"
+          >
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Shield className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <p className="font-display font-bold text-base text-foreground">
+                    Admin Quick Start
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    What each section does
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                data-ocid="admin.quick_start.close_button"
+                onClick={() => setShowQuickStart(false)}
+                className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-secondary flex-shrink-0"
+                aria-label="Dismiss quick start"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+              {[
+                {
+                  icon: TrendingUp,
+                  label: "Overview",
+                  desc: "Platform stats, booking analytics, category breakdown",
+                  color: "oklch(0.92 0.06 220)",
+                  iconColor: "oklch(0.38 0.15 220)",
+                },
+                {
+                  icon: Briefcase,
+                  label: "Services",
+                  desc: "Add, edit, and delete service listings for customers",
+                  color: "oklch(0.92 0.07 145)",
+                  iconColor: "oklch(0.38 0.14 145)",
+                },
+                {
+                  icon: CalendarCheck,
+                  label: "Bookings",
+                  desc: "View all bookings, assign techs, update statuses",
+                  color: "oklch(0.95 0.08 80)",
+                  iconColor: "oklch(0.45 0.14 80)",
+                },
+                {
+                  icon: Users,
+                  label: "Technicians",
+                  desc: "See registered techs, job counts, specializations",
+                  color: "oklch(0.92 0.07 170)",
+                  iconColor: "oklch(0.38 0.14 170)",
+                },
+              ].map(({ icon: Icon, label, desc, color, iconColor }) => (
+                <div
+                  key={label}
+                  className="rounded-lg bg-card border border-border p-3 flex flex-col gap-2"
+                >
+                  <div
+                    className="w-7 h-7 rounded-md flex items-center justify-center"
+                    style={{ backgroundColor: color }}
+                  >
+                    <Icon
+                      className="w-3.5 h-3.5"
+                      style={{ color: iconColor }}
+                    />
+                  </div>
+                  <p className="font-display font-bold text-sm text-foreground">
+                    {label}
+                  </p>
+                  <p className="text-xs text-muted-foreground leading-snug">
+                    {desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-start gap-2.5 p-3 rounded-lg bg-background border border-border">
+              <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                <strong className="text-foreground">To add services:</strong> Go
+                to{" "}
+                <strong className="text-foreground">
+                  Services tab → Add Service
+                </strong>{" "}
+                button.{"  "}
+                <strong className="text-foreground">To assign bookings:</strong>{" "}
+                Go to{" "}
+                <strong className="text-foreground">
+                  Bookings tab → Assign button
+                </strong>{" "}
+                on any pending booking.
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Stat Cards */}
       <div>
         <h2 className="font-display font-bold text-lg text-foreground mb-4 flex items-center gap-2">
@@ -771,7 +902,7 @@ function OverviewSection({ services }: OverviewSectionProps) {
               const Icon = card.icon;
               const rawValue = stats ? stats[card.key] : 0n;
               const displayValue = card.isRevenue
-                ? `$${Number(rawValue).toLocaleString()}`
+                ? `₹${Number(rawValue).toLocaleString("en-IN")}`
                 : Number(rawValue).toLocaleString();
 
               return (
@@ -1424,6 +1555,192 @@ function BookingsSection({ services }: BookingsSectionProps) {
   );
 }
 
+// ─── Users Section ────────────────────────────────────────────────────────────
+function UsersSection() {
+  const { data: customers, isLoading, isError } = useAllCustomers();
+  const adminRemoveUser = useAdminRemoveUser();
+
+  const handleRemove = async (principal: string) => {
+    const customer = customers?.find(
+      (c) => c.principal.toString() === principal,
+    );
+    if (!customer) return;
+    try {
+      await adminRemoveUser.mutateAsync(customer.principal);
+      toast.success("User removed successfully.");
+    } catch {
+      toast.error("Failed to remove user.");
+    }
+  };
+
+  return (
+    <section data-ocid="admin.users.section">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-display font-bold text-lg text-foreground flex items-center gap-2">
+          <Users className="w-5 h-5 text-primary" />
+          Registered Customers
+        </h2>
+        {!isLoading && !isError && customers && (
+          <span className="text-sm text-muted-foreground">
+            {customers.length} customer{customers.length !== 1 ? "s" : ""}
+          </span>
+        )}
+      </div>
+
+      {isLoading ? (
+        <div
+          className="bg-card border border-border rounded-xl overflow-hidden"
+          data-ocid="admin.users.loading_state"
+        >
+          <div className="p-4 space-y-3">
+            {["sk1", "sk2", "sk3"].map((id) => (
+              <div key={id} className="flex gap-4 items-center">
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <Skeleton className="h-5 flex-1" />
+                <Skeleton className="h-5 w-24" />
+                <Skeleton className="h-5 w-16" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : isError ? (
+        <div
+          className="flex flex-col items-center gap-3 py-12 text-center bg-card border border-border rounded-xl"
+          data-ocid="admin.users.error_state"
+        >
+          <AlertCircle className="w-8 h-8 text-destructive" />
+          <p className="text-muted-foreground text-sm">
+            Failed to load customers.
+          </p>
+        </div>
+      ) : !customers || customers.length === 0 ? (
+        <div
+          className="flex flex-col items-center gap-4 py-12 text-center bg-card border border-border rounded-xl"
+          data-ocid="admin.users.empty_state"
+        >
+          <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center">
+            <Users className="w-7 h-7 text-muted-foreground" />
+          </div>
+          <div>
+            <p className="font-display font-bold text-base text-foreground">
+              No customers yet
+            </p>
+            <p className="text-muted-foreground text-sm mt-1">
+              Customers will appear here once they register on the platform.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div
+          className="bg-card border border-border rounded-xl overflow-hidden"
+          data-ocid="admin.users.table"
+        >
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-secondary hover:bg-secondary">
+                <TableHead className="font-display font-bold text-foreground">
+                  Customer
+                </TableHead>
+                <TableHead className="font-display font-bold text-foreground">
+                  Mobile
+                </TableHead>
+                <TableHead className="font-display font-bold text-foreground text-center">
+                  Bookings
+                </TableHead>
+                <TableHead className="text-right font-display font-bold text-foreground">
+                  Actions
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {customers.map((customer, i) => (
+                <TableRow
+                  key={customer.principal.toString()}
+                  className="hover:bg-secondary/50"
+                  data-ocid={`admin.users.row.${i + 1}`}
+                >
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <span className="text-primary font-display font-bold text-xs">
+                          C
+                        </span>
+                      </div>
+                      <code className="text-xs font-mono text-muted-foreground bg-secondary px-1.5 py-0.5 rounded">
+                        {shortenPrincipal(customer.principal.toString())}
+                      </code>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {customer.mobileNumber ? (
+                      <span className="text-sm text-foreground font-medium">
+                        {customer.mobileNumber}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground italic">
+                        Not provided
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary font-bold text-sm">
+                      {Number(customer.bookingCount)}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          data-ocid={`admin.users.delete_button.${i + 1}`}
+                          className="gap-1.5 hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Remove
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="font-display">
+                            Remove Customer?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will remove the customer's profile from the
+                            platform. Their bookings will remain in the system.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel data-ocid="admin.users.delete_dialog.cancel_button">
+                            Cancel
+                          </AlertDialogCancel>
+                          <AlertDialogAction
+                            data-ocid="admin.users.delete_dialog.confirm_button"
+                            onClick={() =>
+                              void handleRemove(customer.principal.toString())
+                            }
+                            disabled={adminRemoveUser.isPending}
+                            className="bg-destructive hover:bg-destructive/90"
+                          >
+                            {adminRemoveUser.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            ) : null}
+                            Remove
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </section>
+  );
+}
+
 // ─── Technicians Section ───────────────────────────────────────────────────────
 function TechniciansSection() {
   const { data: professionals, isLoading, isError } = useListProfessionals();
@@ -1449,6 +1766,43 @@ function TechniciansSection() {
 
   return (
     <section data-ocid="admin.technicians.section">
+      {/* How to Add Technicians */}
+      <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 mb-6">
+        <div className="flex items-start gap-3">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <Info className="w-4 h-4 text-primary" />
+          </div>
+          <div>
+            <p className="font-display font-semibold text-base text-foreground mb-1">
+              How to Add a Technician
+            </p>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              To add a technician, share the app URL with them and ask them to:
+            </p>
+            <ol className="mt-2 space-y-1">
+              {(
+                [
+                  "Sign in with Internet Identity",
+                  "Choose 'I'm a Technician / IT Specialist'",
+                  "Enter their display name and service category",
+                  "They'll appear in this list once registered",
+                ] as const
+              ).map((step, idx) => (
+                <li
+                  key={step}
+                  className="flex items-start gap-2 text-sm text-muted-foreground"
+                >
+                  <span className="w-5 h-5 rounded-full bg-primary/15 text-primary text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                    {idx + 1}
+                  </span>
+                  {step}
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-display font-bold text-lg text-foreground flex items-center gap-2">
@@ -1788,11 +2142,37 @@ export function AdminPanel() {
       count: bookings?.length ?? Number(stats?.totalBookings ?? 0),
     },
     {
+      key: "payments",
+      label: "Payments",
+      icon: CreditCard,
+      ocid: "admin.sidebar.payments_link",
+      count: bookings?.length,
+    },
+    {
+      key: "users",
+      label: "Customers",
+      icon: Users,
+      ocid: "admin.sidebar.users_link",
+      count: undefined,
+    },
+    {
       key: "technicians",
       label: "Technicians",
       icon: Users,
       ocid: "admin.sidebar.technicians_link",
       count: professionals?.length ?? Number(stats?.totalProfessionals ?? 0),
+    },
+    {
+      key: "branding",
+      label: "Branding",
+      icon: Palette,
+      ocid: "admin.sidebar.branding_link",
+    },
+    {
+      key: "database",
+      label: "Database",
+      icon: Database,
+      ocid: "admin.sidebar.database_link",
     },
   ];
 
@@ -1870,7 +2250,15 @@ export function AdminPanel() {
                   <BookingsSection services={services ?? []} />
                 )}
 
+                {activeSection === "payments" && <PaymentsSection />}
+
+                {activeSection === "users" && <UsersSection />}
+
                 {activeSection === "technicians" && <TechniciansSection />}
+
+                {activeSection === "branding" && <BrandingManager />}
+
+                {activeSection === "database" && <DatabaseSchema />}
               </motion.div>
             </AnimatePresence>
           </main>

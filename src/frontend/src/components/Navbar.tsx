@@ -1,16 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "@tanstack/react-router";
-import {
-  FlaskConical,
-  LayoutDashboard,
-  Loader2,
-  LogIn,
-  LogOut,
-  Wrench,
-} from "lucide-react";
+import { LayoutDashboard, Loader2, LogIn, LogOut, Wrench } from "lucide-react";
 import { UserRole } from "../backend.d";
+import { useBranding } from "../contexts/BrandingContext";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { useUserProfile } from "../hooks/useQueries";
+import { NotificationBell } from "./NotificationBell";
 
 export function Navbar() {
   const { identity, login, clear, isLoggingIn, isInitializing } =
@@ -18,6 +13,7 @@ export function Navbar() {
   const isAuthenticated = !!identity;
   const { data: userProfile } = useUserProfile();
   const navigate = useNavigate();
+  const { branding } = useBranding();
 
   const getDashboardLink = () => {
     if (!userProfile) return "/post-login";
@@ -36,6 +32,8 @@ export function Navbar() {
     void navigate({ to: "/" });
   };
 
+  const siteName = branding?.siteName ?? "Lepzo";
+
   return (
     <header className="sticky top-0 z-50 nav-glass">
       <nav className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -45,11 +43,19 @@ export function Navbar() {
           data-ocid="nav.home_link"
           className="flex items-center gap-2 group"
         >
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-primary">
-            <Wrench className="w-4 h-4 text-primary-foreground" />
-          </div>
+          {branding?.logoDataUrl ? (
+            <img
+              src={branding.logoDataUrl}
+              alt={`${siteName} logo`}
+              className="h-8 w-8 rounded object-cover flex-shrink-0"
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-primary">
+              <Wrench className="w-4 h-4 text-primary-foreground" />
+            </div>
+          )}
           <span className="font-display text-xl font-bold text-foreground tracking-tight">
-            ServeLocal
+            {siteName}
           </span>
         </Link>
 
@@ -62,22 +68,15 @@ export function Navbar() {
           >
             Browse Services
           </Link>
-          <Link
-            to="/demo"
-            data-ocid="nav.demo_link"
-            className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors [&.active]:text-primary [&.active]:font-semibold"
-          >
-            <FlaskConical className="w-3.5 h-3.5" />
-            Demo
-          </Link>
         </div>
 
         {/* Auth Controls */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {isInitializing ? (
             <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
           ) : isAuthenticated ? (
             <>
+              <NotificationBell />
               <Link to={getDashboardLink()}>
                 <Button
                   variant="outline"

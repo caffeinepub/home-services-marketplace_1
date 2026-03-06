@@ -1,5 +1,6 @@
 import Map "mo:core/Map";
 import List "mo:core/List";
+import Array "mo:core/Array";
 import Time "mo:core/Time";
 import Principal "mo:core/Principal";
 import Runtime "mo:core/Runtime";
@@ -8,6 +9,14 @@ import AccessControl "authorization/access-control";
 
 actor {
   public type UserRole = AccessControl.UserRole;
+
+  public type BrandingConfig = {
+    logoDataUrl : ?Text;
+    siteName : Text;
+    tagline : Text;
+    footerText : Text;
+    primaryColor : Text;
+  };
 
   public type ServiceCategory = {
     #laptopRepair;
@@ -55,6 +64,7 @@ actor {
   public type UserProfile = {
     role : UserRole;
     professional : ?ProfessionalProfile;
+    mobileNumber : ?Text;
   };
 
   public type PlatformStats = {
@@ -71,14 +81,45 @@ actor {
     category : ServiceCategory;
   };
 
+  public type CustomerInfo = {
+    principal : Principal;
+    mobileNumber : ?Text;
+    bookingCount : Nat;
+  };
+
+  public type ChatMessage = {
+    id : Nat;
+    bookingId : Nat;
+    sender : Principal;
+    senderRole : Text;
+    text : Text;
+    timestamp : Int;
+  };
+
+  type BookingHistory = {
+    customer : Principal;
+    count : Nat;
+  };
+
+  var brandingConfig = {
+    logoDataUrl = null;
+    siteName = "Lepzo";
+    tagline = "Your Trusted Computer Experts";
+    footerText = "Built with love by Hemanth";
+    primaryColor = "#6366f1";
+  } : BrandingConfig;
+
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
   let users = Map.empty<Principal, UserProfile>();
   let services = Map.empty<Nat, Service>();
   let bookings = Map.empty<Nat, Booking>();
+  let messages = Map.empty<Nat, ChatMessage>();
+  let bookingHistory = Map.empty<Principal, BookingHistory>();
   var nextServiceId = 1;
   var nextBookingId = 1;
+  var nextMessageId = 1;
   var isInitialized = false;
 
   func isAdmin(caller : Principal) : Bool {
@@ -118,6 +159,18 @@ actor {
     total;
   };
 
+  // Branding Config Management
+  public shared ({ caller }) func setBrandingConfig(config : BrandingConfig) : async () {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can update branding config");
+    };
+    brandingConfig := config;
+  };
+
+  public query func getBrandingConfig() : async BrandingConfig {
+    brandingConfig;
+  };
+
   // User Profile Management (Required by Frontend)
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
@@ -140,6 +193,20 @@ actor {
     users.add(caller, profile);
   };
 
+  public shared ({ caller }) func updateMobileNumber(mobileNumber : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can update mobile number");
+    };
+
+    switch (users.get(caller)) {
+      case (null) { Runtime.trap("User profile not found") };
+      case (?profile) {
+        let updatedProfile = { profile with mobileNumber = ?mobileNumber };
+        users.add(caller, updatedProfile);
+      };
+    };
+  };
+
   // User Registration
   public shared ({ caller }) func registerProfessional(displayName : Text, category : ServiceCategory) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
@@ -151,6 +218,7 @@ actor {
         displayName;
         category;
       };
+      mobileNumber = null;
     };
     users.add(caller, profile);
   };
@@ -162,11 +230,15 @@ actor {
     let profile : UserProfile = {
       role = #user;
       professional = null;
+      mobileNumber = null;
     };
     users.add(caller, profile);
   };
 
   public query ({ caller }) func isAdminCaller() : async Bool {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can check admin status");
+    };
     isAdmin(caller);
   };
 
@@ -270,6 +342,21 @@ actor {
                   createdAt = Time.now();
                 };
                 bookings.add(nextBookingId, booking);
+
+                // Update booking history
+                let history = switch (bookingHistory.get(caller)) {
+                  case (?existing) {
+                    { existing with count = existing.count + 1 };
+                  };
+                  case (null) {
+                    {
+                      customer = caller;
+                      count = 1;
+                    };
+                  };
+                };
+                bookingHistory.add(caller, history);
+
                 nextBookingId += 1;
                 booking.id;
               };
@@ -418,6 +505,21 @@ actor {
     };
   };
 
+  // Admin Override Booking Status
+  public shared ({ caller }) func adminUpdateBookingStatus(bookingId : Nat, status : BookingStatus) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can update booking status");
+    };
+
+    switch (bookings.get(bookingId)) {
+      case (null) { Runtime.trap("Booking not found") };
+      case (?booking) {
+        let updatedBooking = { booking with status };
+        bookings.add(bookingId, updatedBooking);
+      };
+    };
+  };
+
   // Platform Stats (Admin Only)
   public query ({ caller }) func getPlatformStats() : async PlatformStats {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
@@ -430,6 +532,52 @@ actor {
       totalBookings = bookings.size();
       totalCompletedBookings = getTotalCompletedBookings();
       totalRevenue = getTotalRevenue();
+    };
+  };
+
+  // Get All Customers (Admin Only)
+  public query ({ caller }) func getAllCustomers() : async [CustomerInfo] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can view all customers");
+    };
+
+    let customers = List.empty<(Principal, UserProfile)>();
+    for ((principal, profile) in users.entries()) {
+      switch (profile.professional) {
+        case (null) {
+          customers.add((principal, profile));
+        };
+        case (?_) {};
+      };
+    };
+
+    let customerList = customers.toArray();
+    let result = List.empty<CustomerInfo>();
+    for ((principal, profile) in customerList.values()) {
+      let customerBookings = switch (bookingHistory.get(principal)) {
+        case (?history) { history.count };
+        case (null) { 0 };
+      };
+      result.add({
+        principal;
+        mobileNumber = profile.mobileNumber;
+        bookingCount = customerBookings;
+      });
+    };
+
+    result.toArray();
+  };
+
+  // Admin Only: Remove User Profile
+  public shared ({ caller }) func adminRemoveUser(userPrincipal : Principal) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can remove users");
+    };
+    switch (users.get(userPrincipal)) {
+      case (null) { Runtime.trap("User not found") };
+      case (?_) {
+        users.remove(userPrincipal);
+      };
     };
   };
 
@@ -578,5 +726,79 @@ actor {
     };
 
     result.toArray();
+  };
+
+  public shared ({ caller }) func sendMessage(bookingId : Nat, text : Text) : async Nat {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can send messages");
+    };
+
+    switch (bookings.get(bookingId)) {
+      case (null) { Runtime.trap("Booking not found") };
+      case (?booking) {
+        let senderRole = switch (users.get(caller)) {
+          case (null) { Runtime.trap("User profile not found") };
+          case (?profile) {
+            switch (profile.professional) {
+              case (null) { "customer" };
+              case (?_) { "professional" };
+            };
+          };
+        };
+
+        if (
+          (caller != booking.customer) and
+          (not checkProfessional(booking.assignedProfessional, caller))
+        ) {
+          Runtime.trap("Unauthorized: Not a participant of the booking");
+        };
+
+        let message = {
+          id = nextMessageId;
+          bookingId;
+          sender = caller;
+          senderRole;
+          text;
+          timestamp = Time.now();
+        };
+
+        messages.add(nextMessageId, message);
+        nextMessageId += 1;
+        message.id;
+      };
+    };
+  };
+
+  func checkProfessional(assignedProfessional : ?Principal, caller : Principal) : Bool {
+    switch (assignedProfessional) {
+      case (?professional) { professional == caller };
+      case (null) { false };
+    };
+  };
+
+  public query ({ caller }) func getMessages(bookingId : Nat) : async [ChatMessage] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view messages");
+    };
+
+    switch (bookings.get(bookingId)) {
+      case (null) { Runtime.trap("Booking not found") };
+      case (?booking) {
+        if (
+          (caller != booking.customer) and
+          (not checkProfessional(booking.assignedProfessional, caller))
+        ) {
+          Runtime.trap("Unauthorized: Not a participant of the booking");
+        };
+
+        let result = List.empty<ChatMessage>();
+        for ((_, message) in messages.entries()) {
+          if (message.bookingId == bookingId) {
+            result.add(message);
+          };
+        };
+        result.toArray();
+      };
+    };
   };
 };

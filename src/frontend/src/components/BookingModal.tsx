@@ -142,7 +142,8 @@ export function BookingModal({ service, open, onClose }: BookingModalProps) {
               <span className="font-semibold text-foreground">
                 {service.name}
               </span>{" "}
-              · ${Number(service.minPrice)} – ${Number(service.maxPrice)}
+              · ₹{Number(service.minPrice).toLocaleString("en-IN")} – ₹
+              {Number(service.maxPrice).toLocaleString("en-IN")}
             </p>
           )}
         </DialogHeader>

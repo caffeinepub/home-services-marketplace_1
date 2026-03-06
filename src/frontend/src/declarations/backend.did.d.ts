@@ -26,6 +26,26 @@ export type BookingStatus = { 'cancelled' : null } |
   { 'completed' : null } |
   { 'confirmed' : null } |
   { 'inProgress' : null };
+export interface BrandingConfig {
+  'tagline' : string,
+  'primaryColor' : string,
+  'logoDataUrl' : [] | [string],
+  'siteName' : string,
+  'footerText' : string,
+}
+export interface ChatMessage {
+  'id' : bigint,
+  'bookingId' : bigint,
+  'text' : string,
+  'sender' : Principal,
+  'timestamp' : bigint,
+  'senderRole' : string,
+}
+export interface CustomerInfo {
+  'principal' : Principal,
+  'mobileNumber' : [] | [string],
+  'bookingCount' : bigint,
+}
 export interface PlatformStats {
   'totalProfessionals' : bigint,
   'totalBookings' : bigint,
@@ -58,6 +78,7 @@ export type ServiceCategory = { 'dataRecovery' : null } |
   { 'computerSales' : null };
 export interface UserProfile {
   'role' : UserRole,
+  'mobileNumber' : [] | [string],
   'professional' : [] | [ProfessionalProfile],
 }
 export type UserRole = { 'admin' : null } |
@@ -69,14 +90,19 @@ export interface _SERVICE {
     [string, string, ServiceCategory, bigint, bigint],
     bigint
   >,
+  'adminRemoveUser' : ActorMethod<[Principal], undefined>,
+  'adminUpdateBookingStatus' : ActorMethod<[bigint, BookingStatus], undefined>,
   'assignBookingToProfessional' : ActorMethod<[bigint, Principal], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'cancelBooking' : ActorMethod<[bigint], undefined>,
   'createBooking' : ActorMethod<[bigint, string, string, string], bigint>,
   'getAllBookings' : ActorMethod<[], Array<Booking>>,
+  'getAllCustomers' : ActorMethod<[], Array<CustomerInfo>>,
   'getAssignedBookings' : ActorMethod<[], Array<Booking>>,
+  'getBrandingConfig' : ActorMethod<[], BrandingConfig>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
+  'getMessages' : ActorMethod<[bigint], Array<ChatMessage>>,
   'getMyBookings' : ActorMethod<[], Array<Booking>>,
   'getPlatformStats' : ActorMethod<[], PlatformStats>,
   'getServicesByCategory' : ActorMethod<
@@ -93,7 +119,10 @@ export interface _SERVICE {
   'registerProfessional' : ActorMethod<[string, ServiceCategory], undefined>,
   'removeService' : ActorMethod<[bigint], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'sendMessage' : ActorMethod<[bigint, string], bigint>,
+  'setBrandingConfig' : ActorMethod<[BrandingConfig], undefined>,
   'updateBookingStatus' : ActorMethod<[bigint, BookingStatus], undefined>,
+  'updateMobileNumber' : ActorMethod<[string], undefined>,
   'updateService' : ActorMethod<
     [bigint, string, string, ServiceCategory, bigint, bigint],
     undefined

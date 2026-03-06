@@ -10,13 +10,16 @@ import {
   CheckCircle2,
   ChevronRight,
   ClipboardList,
+  Database,
   Fingerprint,
   Globe,
   Key,
   Layers,
   LogIn,
+  Server,
   Settings,
   Shield,
+  ShieldCheck,
   Sparkles,
   TrendingUp,
   UserCheck,
@@ -46,11 +49,12 @@ const roles = [
     ],
     demoSteps: [
       "Sign in with Internet Identity",
-      "You're automatically detected as Admin",
-      "Navigate to Dashboard → Admin Panel",
+      "Go to /admin-setup and enter your Caffeine admin token",
+      "You're now the admin — navigate to Admin Panel",
       "Use the sidebar: Overview, Services, Bookings, Technicians",
     ],
-    highlight: "The first registered user is automatically set as Admin.",
+    highlight:
+      "The app owner claims admin by visiting /admin-setup and entering the Caffeine admin token from their preview URL.",
   },
   {
     id: "customer",
@@ -518,6 +522,87 @@ export function DemoPage() {
               </table>
             </div>
           </motion.div>
+        </div>
+      </section>
+
+      {/* ─── About Hosting & Data Storage ─── */}
+      <section className="py-16 bg-background border-t border-border">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="text-center mb-10"
+          >
+            <h2 className="font-display text-3xl font-black text-foreground mb-2">
+              About Hosting & Data Storage
+            </h2>
+            <p className="text-muted-foreground">
+              How Lepzo works without traditional servers or databases
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-4xl mx-auto">
+            {[
+              {
+                icon: Database,
+                title: "Where is my data stored?",
+                body: "All data is stored on the Internet Computer blockchain — a decentralized cloud hosted by independent data centers worldwide. No traditional server or database is needed.",
+                accent: "oklch(0.55 0.18 220)",
+                bg: "oklch(0.96 0.03 220)",
+              },
+              {
+                icon: Server,
+                title: "Do I need separate hosting?",
+                body: "No. Lepzo runs entirely on the Internet Computer. Your app and its data are deployed as smart contracts (canisters), which are always online without any hosting provider.",
+                accent: "oklch(0.55 0.18 170)",
+                bg: "oklch(0.96 0.03 170)",
+              },
+              {
+                icon: Globe,
+                title: "Can I use a traditional database?",
+                body: "The Internet Computer replaces traditional databases. Data is stored directly inside your canister's stable memory — no MySQL, PostgreSQL, or MongoDB required.",
+                accent: "oklch(0.55 0.15 60)",
+                bg: "oklch(0.96 0.04 60)",
+              },
+              {
+                icon: ShieldCheck,
+                title: "Is it secure?",
+                body: "Yes. Data is replicated across multiple independent nodes, cryptographically secured, and cannot be tampered with. Security is built into the protocol.",
+                accent: "oklch(0.52 0.18 145)",
+                bg: "oklch(0.96 0.03 145)",
+              },
+            ].map((card, i) => {
+              const Icon = card.icon;
+              return (
+                <motion.div
+                  key={card.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1, duration: 0.45 }}
+                  data-ocid={`demo.hosting.card.${i + 1}`}
+                  className="flex gap-4 p-5 rounded-2xl border border-border bg-card"
+                >
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
+                    style={{ backgroundColor: card.bg }}
+                  >
+                    <Icon className="w-5 h-5" style={{ color: card.accent }} />
+                  </div>
+                  <div>
+                    <h3 className="font-display font-bold text-sm text-foreground mb-1.5">
+                      {card.title}
+                    </h3>
+                    <p className="text-muted-foreground text-xs leading-relaxed">
+                      {card.body}
+                    </p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
         </div>
       </section>
 

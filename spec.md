@@ -1,35 +1,60 @@
-# Computer Sales & Services
+# Lepzo — Computer Sales & Services Marketplace
 
 ## Current State
-Full-stack marketplace for computer sales and services with:
-- Landing page with 6 service categories
-- Services page with booking modal
-- Role-based dashboards: Customer (bookings), Professional (Kanban), Admin (full panel)
-- Admin Panel with sidebar nav: Overview (stats + analytics), Services CRUD, Bookings management, Technicians list
-- Backend APIs for services, bookings, professionals, platform stats
+
+The app has a working backend with these data stores:
+- Users (principal → UserProfile with role, professional info, mobile)
+- Services (id → Service with name, category, price range)
+- Bookings (id → Booking with customer, service, date, status, assigned professional)
+- Messages (id → ChatMessage per booking)
+- BookingHistory (principal → booking count)
+- BrandingConfig (site-wide branding)
+
+Frontend has: Landing page, Services page, Customer Dashboard, Professional Kanban Dashboard, Admin Panel (Overview, Services, Bookings, Customers, Technicians, Branding tabs), In-app Chat, Booking Calendar, Service Comparison.
 
 ## Requested Changes (Diff)
 
 ### Add
-- **Service Comparison Tool** on Services page: users can select up to 3 services to compare side-by-side (name, category, price range, description). A "Compare" toggle button on each service card; floating comparison bar at bottom shows selected count and opens a comparison modal/drawer.
-- **Enhanced Booking Calendar** on the booking modal: replace the plain date text input with a visual calendar date picker (using a calendar component) with time slot selection (Morning/Afternoon/Evening radio buttons). Already has timeSlot field in backend.
-- **Demo Credentials Page** (`/demo`) accessible from navbar and landing page: shows demo login info for Admin, Customer, and Technician roles in a clean card layout. Since the app uses Internet Identity (no username/password), the page explains the role system and shows what each role can access, plus a note that role assignment is done by admin after first login. Includes a table of features per role.
+
+**Backend tables:**
+1. **Reviews** — Customer can submit a review (rating 1-5, comment) for a completed booking. One review per booking.
+2. **Payments** — Payment record created when a booking is completed or when customer confirms payment. Fields: id, bookingId, customer, amount, status (pending/paid/refunded), createdAt.
+3. **Admin table** — Already handled via AccessControl. Admin profile stores display name and contact email for the admin panel header.
+
+**Backend functions:**
+- `submitReview(bookingId, rating, comment)` — customer only, booking must be completed
+- `getReviewsForService(serviceId)` — public
+- `getReviewsForProfessional(professional)` — public
+- `createPayment(bookingId, amount)` — system creates when booking confirmed
+- `updatePaymentStatus(paymentId, status)` — admin only
+- `getPaymentsForBooking(bookingId)` — user/admin
+- `getAllPayments()` — admin only
+
+**Frontend:**
+- Review form shown in Customer Dashboard after a booking is completed (star rating + comment)
+- Reviews panel shown on Service detail cards (average rating, review count)
+- Payments tab in Admin Panel — lists all payments, admin can mark as paid/refunded
+- Customer Dashboard shows payment status for each booking
 
 ### Modify
-- ServicesPage: add comparison toggle button to each service card and a fixed comparison bar at the bottom.
-- BookingModal: upgrade date input to a proper calendar date picker and improve time slot UI to radio buttons with labels.
-- Navbar: add "Demo Credentials" link.
-- LandingPage: add a "View Demo" or "Try the Demo" CTA that links to `/demo`.
+
+- `createBooking` — also creates a pending payment record automatically
+- Admin Panel — add Payments tab
+- Customer Dashboard — show rating widget for completed bookings, show payment status badge
+- Professional Dashboard — show average rating received
 
 ### Remove
-- Nothing removed.
+
+Nothing removed.
 
 ## Implementation Plan
-1. Create `src/frontend/src/pages/DemoPage.tsx` — roles table with feature access matrix, login flow explanation.
-2. Create `src/frontend/src/components/CompareBar.tsx` — floating bottom bar showing selected services for comparison.
-3. Create `src/frontend/src/components/CompareModal.tsx` — side-by-side comparison table dialog.
-4. Modify `ServicesPage.tsx` — add compare state, compare toggle button on each card, render CompareBar + CompareModal.
-5. Modify `BookingModal.tsx` — replace date text input with Calendar component + radio time slot buttons.
-6. Modify `App.tsx` — add `/demo` route.
-7. Modify `Navbar.tsx` — add Demo Credentials nav link.
-8. Modify `LandingPage.tsx` — add "Try Demo" CTA button linking to `/demo`.
+
+1. Add `Review` and `Payment` types to backend
+2. Add `reviews` and `payments` maps, `nextReviewId`, `nextPaymentId` counters
+3. Implement `submitReview`, `getReviewsForService`, `getReviewsForProfessional`
+4. Implement `createPayment` (internal + public), `updatePaymentStatus`, `getPaymentsForBooking`, `getAllPayments`
+5. Modify `createBooking` to auto-create a pending payment
+6. Update frontend: Reviews widget on customer dashboard completed bookings
+7. Update frontend: Payments tab in Admin Panel
+8. Update frontend: Service card average rating display
+9. Update frontend: Professional dashboard average rating earned

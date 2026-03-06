@@ -16,17 +16,17 @@ export const ServiceCategory = IDL.Variant({
   'accessoriesSales' : IDL.Null,
   'computerSales' : IDL.Null,
 });
-export const UserRole = IDL.Variant({
-  'admin' : IDL.Null,
-  'user' : IDL.Null,
-  'guest' : IDL.Null,
-});
 export const BookingStatus = IDL.Variant({
   'cancelled' : IDL.Null,
   'pending' : IDL.Null,
   'completed' : IDL.Null,
   'confirmed' : IDL.Null,
   'inProgress' : IDL.Null,
+});
+export const UserRole = IDL.Variant({
+  'admin' : IDL.Null,
+  'user' : IDL.Null,
+  'guest' : IDL.Null,
 });
 export const Booking = IDL.Record({
   'id' : IDL.Nat,
@@ -39,13 +39,34 @@ export const Booking = IDL.Record({
   'serviceId' : IDL.Nat,
   'timeSlot' : IDL.Text,
 });
+export const CustomerInfo = IDL.Record({
+  'principal' : IDL.Principal,
+  'mobileNumber' : IDL.Opt(IDL.Text),
+  'bookingCount' : IDL.Nat,
+});
+export const BrandingConfig = IDL.Record({
+  'tagline' : IDL.Text,
+  'primaryColor' : IDL.Text,
+  'logoDataUrl' : IDL.Opt(IDL.Text),
+  'siteName' : IDL.Text,
+  'footerText' : IDL.Text,
+});
 export const ProfessionalProfile = IDL.Record({
   'displayName' : IDL.Text,
   'category' : ServiceCategory,
 });
 export const UserProfile = IDL.Record({
   'role' : UserRole,
+  'mobileNumber' : IDL.Opt(IDL.Text),
   'professional' : IDL.Opt(ProfessionalProfile),
+});
+export const ChatMessage = IDL.Record({
+  'id' : IDL.Nat,
+  'bookingId' : IDL.Nat,
+  'text' : IDL.Text,
+  'sender' : IDL.Principal,
+  'timestamp' : IDL.Int,
+  'senderRole' : IDL.Text,
 });
 export const PlatformStats = IDL.Record({
   'totalProfessionals' : IDL.Nat,
@@ -75,6 +96,8 @@ export const idlService = IDL.Service({
       [IDL.Nat],
       [],
     ),
+  'adminRemoveUser' : IDL.Func([IDL.Principal], [], []),
+  'adminUpdateBookingStatus' : IDL.Func([IDL.Nat, BookingStatus], [], []),
   'assignBookingToProfessional' : IDL.Func([IDL.Nat, IDL.Principal], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'cancelBooking' : IDL.Func([IDL.Nat], [], []),
@@ -84,9 +107,12 @@ export const idlService = IDL.Service({
       [],
     ),
   'getAllBookings' : IDL.Func([], [IDL.Vec(Booking)], ['query']),
+  'getAllCustomers' : IDL.Func([], [IDL.Vec(CustomerInfo)], ['query']),
   'getAssignedBookings' : IDL.Func([], [IDL.Vec(Booking)], ['query']),
+  'getBrandingConfig' : IDL.Func([], [BrandingConfig], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+  'getMessages' : IDL.Func([IDL.Nat], [IDL.Vec(ChatMessage)], ['query']),
   'getMyBookings' : IDL.Func([], [IDL.Vec(Booking)], ['query']),
   'getPlatformStats' : IDL.Func([], [PlatformStats], ['query']),
   'getServicesByCategory' : IDL.Func(
@@ -108,7 +134,10 @@ export const idlService = IDL.Service({
   'registerProfessional' : IDL.Func([IDL.Text, ServiceCategory], [], []),
   'removeService' : IDL.Func([IDL.Nat], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'sendMessage' : IDL.Func([IDL.Nat, IDL.Text], [IDL.Nat], []),
+  'setBrandingConfig' : IDL.Func([BrandingConfig], [], []),
   'updateBookingStatus' : IDL.Func([IDL.Nat, BookingStatus], [], []),
+  'updateMobileNumber' : IDL.Func([IDL.Text], [], []),
   'updateService' : IDL.Func(
       [IDL.Nat, IDL.Text, IDL.Text, ServiceCategory, IDL.Nat, IDL.Nat],
       [],
@@ -127,17 +156,17 @@ export const idlFactory = ({ IDL }) => {
     'accessoriesSales' : IDL.Null,
     'computerSales' : IDL.Null,
   });
-  const UserRole = IDL.Variant({
-    'admin' : IDL.Null,
-    'user' : IDL.Null,
-    'guest' : IDL.Null,
-  });
   const BookingStatus = IDL.Variant({
     'cancelled' : IDL.Null,
     'pending' : IDL.Null,
     'completed' : IDL.Null,
     'confirmed' : IDL.Null,
     'inProgress' : IDL.Null,
+  });
+  const UserRole = IDL.Variant({
+    'admin' : IDL.Null,
+    'user' : IDL.Null,
+    'guest' : IDL.Null,
   });
   const Booking = IDL.Record({
     'id' : IDL.Nat,
@@ -150,13 +179,34 @@ export const idlFactory = ({ IDL }) => {
     'serviceId' : IDL.Nat,
     'timeSlot' : IDL.Text,
   });
+  const CustomerInfo = IDL.Record({
+    'principal' : IDL.Principal,
+    'mobileNumber' : IDL.Opt(IDL.Text),
+    'bookingCount' : IDL.Nat,
+  });
+  const BrandingConfig = IDL.Record({
+    'tagline' : IDL.Text,
+    'primaryColor' : IDL.Text,
+    'logoDataUrl' : IDL.Opt(IDL.Text),
+    'siteName' : IDL.Text,
+    'footerText' : IDL.Text,
+  });
   const ProfessionalProfile = IDL.Record({
     'displayName' : IDL.Text,
     'category' : ServiceCategory,
   });
   const UserProfile = IDL.Record({
     'role' : UserRole,
+    'mobileNumber' : IDL.Opt(IDL.Text),
     'professional' : IDL.Opt(ProfessionalProfile),
+  });
+  const ChatMessage = IDL.Record({
+    'id' : IDL.Nat,
+    'bookingId' : IDL.Nat,
+    'text' : IDL.Text,
+    'sender' : IDL.Principal,
+    'timestamp' : IDL.Int,
+    'senderRole' : IDL.Text,
   });
   const PlatformStats = IDL.Record({
     'totalProfessionals' : IDL.Nat,
@@ -186,6 +236,8 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Nat],
         [],
       ),
+    'adminRemoveUser' : IDL.Func([IDL.Principal], [], []),
+    'adminUpdateBookingStatus' : IDL.Func([IDL.Nat, BookingStatus], [], []),
     'assignBookingToProfessional' : IDL.Func([IDL.Nat, IDL.Principal], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'cancelBooking' : IDL.Func([IDL.Nat], [], []),
@@ -195,9 +247,12 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'getAllBookings' : IDL.Func([], [IDL.Vec(Booking)], ['query']),
+    'getAllCustomers' : IDL.Func([], [IDL.Vec(CustomerInfo)], ['query']),
     'getAssignedBookings' : IDL.Func([], [IDL.Vec(Booking)], ['query']),
+    'getBrandingConfig' : IDL.Func([], [BrandingConfig], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+    'getMessages' : IDL.Func([IDL.Nat], [IDL.Vec(ChatMessage)], ['query']),
     'getMyBookings' : IDL.Func([], [IDL.Vec(Booking)], ['query']),
     'getPlatformStats' : IDL.Func([], [PlatformStats], ['query']),
     'getServicesByCategory' : IDL.Func(
@@ -219,7 +274,10 @@ export const idlFactory = ({ IDL }) => {
     'registerProfessional' : IDL.Func([IDL.Text, ServiceCategory], [], []),
     'removeService' : IDL.Func([IDL.Nat], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'sendMessage' : IDL.Func([IDL.Nat, IDL.Text], [IDL.Nat], []),
+    'setBrandingConfig' : IDL.Func([BrandingConfig], [], []),
     'updateBookingStatus' : IDL.Func([IDL.Nat, BookingStatus], [], []),
+    'updateMobileNumber' : IDL.Func([IDL.Text], [], []),
     'updateService' : IDL.Func(
         [IDL.Nat, IDL.Text, IDL.Text, ServiceCategory, IDL.Nat, IDL.Nat],
         [],

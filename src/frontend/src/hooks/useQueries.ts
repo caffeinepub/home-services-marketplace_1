@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   type Booking,
   BookingStatus,
+  type CustomerInfo,
   type PlatformStats,
   type ProfessionalInfo,
   type Service,
@@ -307,6 +308,27 @@ export function useRemoveService() {
   });
 }
 
+// ─── Branding ────────────────────────────────────────────────────────────────
+export function useSetBrandingConfig() {
+  const { actor } = useActor();
+  return useMutation({
+    mutationFn: async (config: import("../backend.d").BrandingConfig) => {
+      if (!actor) throw new Error("Not connected");
+      return actor.setBrandingConfig(config);
+    },
+  });
+}
+
+export function useUpdateMobileNumber() {
+  const { actor } = useActor();
+  return useMutation({
+    mutationFn: async (mobileNumber: string) => {
+      if (!actor) throw new Error("Not connected");
+      return actor.updateMobileNumber(mobileNumber);
+    },
+  });
+}
+
 // ─── Admin Bookings ───────────────────────────────────────────────────────────
 export function useAllBookings() {
   const { actor, isFetching } = useActor();
@@ -359,11 +381,11 @@ export function useAssignBookingToProfessional() {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 export function formatPrice(price: bigint): string {
-  return `$${Number(price)}`;
+  return `₹${Number(price).toLocaleString("en-IN")}`;
 }
 
 export function formatPriceRange(min: bigint, max: bigint): string {
-  return `$${Number(min)} – $${Number(max)}`;
+  return `₹${Number(min).toLocaleString("en-IN")} – ₹${Number(max).toLocaleString("en-IN")}`;
 }
 
 export function getCategoryLabel(cat: ServiceCategory): string {
@@ -403,4 +425,56 @@ export function getStatusClass(status: BookingStatus): string {
 export function shortenPrincipal(principal: string): string {
   if (principal.length <= 12) return principal;
   return `${principal.slice(0, 6)}...${principal.slice(-4)}`;
+}
+
+// ─── Admin: All Customers ────────────────────────────────────────────────────
+export function useAllCustomers() {
+  const { actor, isFetching } = useActor();
+  return useQuery<CustomerInfo[]>({
+    queryKey: ["customers", "all"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getAllCustomers();
+    },
+    enabled: !!actor && !isFetching,
+    staleTime: 30_000,
+  });
+}
+
+// ─── Admin: Override booking status (no restriction on transitions) ──────────
+export function useAdminUpdateBookingStatus() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      bookingId,
+      status,
+    }: {
+      bookingId: bigint;
+      status: BookingStatus;
+    }) => {
+      if (!actor) throw new Error("Not connected");
+      return actor.adminUpdateBookingStatus(bookingId, status);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["bookings", "all"] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.platformStats });
+    },
+  });
+}
+
+// ─── Admin: Remove user ────────────────────────────────────────────────────────
+export function useAdminRemoveUser() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (userPrincipal: Principal) => {
+      if (!actor) throw new Error("Not connected");
+      return actor.adminRemoveUser(userPrincipal);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["customers", "all"] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.platformStats });
+    },
+  });
 }

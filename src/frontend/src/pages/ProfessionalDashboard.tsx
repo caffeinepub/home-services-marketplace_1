@@ -10,14 +10,17 @@ import {
   Clock,
   DollarSign,
   Loader2,
+  MessageCircle,
   PackageOpen,
   Play,
   User,
   Wrench,
 } from "lucide-react";
 import { motion } from "motion/react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { type Booking, BookingStatus } from "../backend.d";
+import { ChatDialog } from "../components/ChatDialog";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
   shortenPrincipal,
@@ -48,6 +51,13 @@ function KanbanJobCard({
 }: KanbanJobCardProps) {
   const updateStatus = useUpdateBookingStatus();
   const isUpdating = updateStatus.isPending;
+  const [chatOpen, setChatOpen] = useState(false);
+
+  const canChat = [
+    BookingStatus.confirmed,
+    BookingStatus.inProgress,
+    BookingStatus.completed,
+  ].includes(booking.status);
 
   const handleStartJob = async () => {
     try {
@@ -74,112 +84,140 @@ function KanbanJobCard({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
-      className="bg-background border border-border rounded-xl p-4 space-y-3 shadow-xs"
-      data-ocid={`professional.kanban.${column}.item.${index + 1}`}
-    >
-      {/* Service name + pending badge */}
-      <div className="flex items-start justify-between gap-2">
-        <h4 className="font-display font-bold text-sm text-foreground leading-tight">
-          {serviceName}
-        </h4>
-        {booking.status === BookingStatus.pending && (
-          <Badge
-            variant="secondary"
-            className="text-xs shrink-0 bg-warning/15 text-warning-foreground border-warning/30"
-          >
-            Pending
-          </Badge>
-        )}
-        {booking.status === BookingStatus.confirmed && (
-          <Badge
-            variant="secondary"
-            className="text-xs shrink-0 bg-blue-50 text-blue-700 border-blue-200"
-          >
-            Confirmed
-          </Badge>
-        )}
-        {booking.status === BookingStatus.inProgress && (
-          <Badge
-            variant="secondary"
-            className="text-xs shrink-0 bg-amber-50 text-amber-700 border-amber-200"
-          >
-            In Progress
-          </Badge>
-        )}
-        {booking.status === BookingStatus.completed && (
-          <Badge
-            variant="secondary"
-            className="text-xs shrink-0 bg-success/10 text-success border-success/20"
-          >
-            Done
-          </Badge>
-        )}
-      </div>
-
-      {/* Meta info */}
-      <div className="space-y-1.5">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <User className="w-3 h-3 shrink-0" />
-          <span className="font-mono truncate">
-            {shortenPrincipal(booking.customer.toString())}
-          </span>
-        </div>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <CalendarDays className="w-3 h-3 shrink-0" />
-          <span>{booking.date}</span>
-        </div>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Clock className="w-3 h-3 shrink-0" />
-          <span>{timeSlotLabel[booking.timeSlot] ?? booking.timeSlot}</span>
-        </div>
-      </div>
-
-      {/* Action */}
-      {booking.status === BookingStatus.confirmed && (
-        <Button
-          size="sm"
-          className="w-full gap-1.5 text-xs"
-          data-ocid={`professional.kanban.new_orders.start_button.${index + 1}`}
-          onClick={() => void handleStartJob()}
-          disabled={isUpdating}
-          style={{ background: "oklch(0.55 0.18 220)", color: "white" }}
-        >
-          {isUpdating ? (
-            <Loader2 className="w-3 h-3 animate-spin" />
-          ) : (
-            <Play className="w-3 h-3" />
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.05 }}
+        className="bg-background border border-border rounded-xl p-4 space-y-3 shadow-xs"
+        data-ocid={`professional.kanban.${column}.item.${index + 1}`}
+      >
+        {/* Service name + status badge */}
+        <div className="flex items-start justify-between gap-2">
+          <h4 className="font-display font-bold text-sm text-foreground leading-tight">
+            {serviceName}
+          </h4>
+          {booking.status === BookingStatus.pending && (
+            <Badge
+              variant="secondary"
+              className="text-xs shrink-0 bg-warning/15 text-warning-foreground border-warning/30"
+            >
+              Pending
+            </Badge>
           )}
-          Start Job
-        </Button>
-      )}
-      {booking.status === BookingStatus.inProgress && (
-        <Button
-          size="sm"
-          className="w-full gap-1.5 text-xs"
-          data-ocid={`professional.kanban.in_progress.complete_button.${index + 1}`}
-          onClick={() => void handleCompleteJob()}
-          disabled={isUpdating}
-          style={{ background: "oklch(0.55 0.16 145)", color: "white" }}
-        >
-          {isUpdating ? (
-            <Loader2 className="w-3 h-3 animate-spin" />
-          ) : (
-            <CheckCircle2 className="w-3 h-3" />
+          {booking.status === BookingStatus.confirmed && (
+            <Badge
+              variant="secondary"
+              className="text-xs shrink-0 bg-blue-50 text-blue-700 border-blue-200"
+            >
+              Confirmed
+            </Badge>
           )}
-          Mark Complete
-        </Button>
-      )}
-      {booking.status === BookingStatus.pending && (
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted rounded-lg px-3 py-2">
-          <Clock className="w-3 h-3 shrink-0" />
-          Pending Assignment
+          {booking.status === BookingStatus.inProgress && (
+            <Badge
+              variant="secondary"
+              className="text-xs shrink-0 bg-amber-50 text-amber-700 border-amber-200"
+            >
+              In Progress
+            </Badge>
+          )}
+          {booking.status === BookingStatus.completed && (
+            <Badge
+              variant="secondary"
+              className="text-xs shrink-0 bg-success/10 text-success border-success/20"
+            >
+              Done
+            </Badge>
+          )}
         </div>
+
+        {/* Meta info */}
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <User className="w-3 h-3 shrink-0" />
+            <span className="font-mono truncate">
+              {shortenPrincipal(booking.customer.toString())}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <CalendarDays className="w-3 h-3 shrink-0" />
+            <span>{booking.date}</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Clock className="w-3 h-3 shrink-0" />
+            <span>{timeSlotLabel[booking.timeSlot] ?? booking.timeSlot}</span>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-col gap-2">
+          {booking.status === BookingStatus.confirmed && (
+            <Button
+              size="sm"
+              className="w-full gap-1.5 text-xs"
+              data-ocid={`professional.kanban.new_orders.start_button.${index + 1}`}
+              onClick={() => void handleStartJob()}
+              disabled={isUpdating}
+              style={{ background: "oklch(0.55 0.18 220)", color: "white" }}
+            >
+              {isUpdating ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <Play className="w-3 h-3" />
+              )}
+              Start Job
+            </Button>
+          )}
+          {booking.status === BookingStatus.inProgress && (
+            <Button
+              size="sm"
+              className="w-full gap-1.5 text-xs"
+              data-ocid={`professional.kanban.in_progress.complete_button.${index + 1}`}
+              onClick={() => void handleCompleteJob()}
+              disabled={isUpdating}
+              style={{ background: "oklch(0.55 0.16 145)", color: "white" }}
+            >
+              {isUpdating ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <CheckCircle2 className="w-3 h-3" />
+              )}
+              Mark Complete
+            </Button>
+          )}
+          {booking.status === BookingStatus.pending && (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted rounded-lg px-3 py-2">
+              <Clock className="w-3 h-3 shrink-0" />
+              Pending Assignment
+            </div>
+          )}
+
+          {/* Chat with Customer */}
+          {canChat && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full gap-1.5 text-xs text-primary border-primary/30 hover:border-primary hover:bg-primary/5"
+              data-ocid={`professional.chat_button.${index + 1}`}
+              onClick={() => setChatOpen(true)}
+            >
+              <MessageCircle className="w-3 h-3" />
+              Chat with Customer
+            </Button>
+          )}
+        </div>
+      </motion.div>
+
+      {/* Chat Dialog */}
+      {canChat && (
+        <ChatDialog
+          bookingId={booking.id}
+          open={chatOpen}
+          onClose={() => setChatOpen(false)}
+          currentUserRole="professional"
+        />
       )}
-    </motion.div>
+    </>
   );
 }
 
@@ -440,7 +478,7 @@ export function ProfessionalDashboard() {
                   </div>
                   <div>
                     <div className="font-display font-black text-2xl text-foreground">
-                      ${estEarnings.toLocaleString()}
+                      ₹{estEarnings.toLocaleString("en-IN")}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       Est. Earnings
