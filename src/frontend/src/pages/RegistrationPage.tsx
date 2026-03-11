@@ -126,6 +126,7 @@ export function RegistrationPage() {
         category: category as ServiceCategory,
       });
       await saveMobile(mobileNumber);
+      localStorage.setItem("lepzo_tech_pending", "1");
       toast.success(
         `Welcome, ${displayName.trim()}! Your professional account is ready.`,
       );

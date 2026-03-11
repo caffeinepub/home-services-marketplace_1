@@ -42,12 +42,16 @@ export interface Service {
     minPrice: bigint;
 }
 export interface ProfessionalProfile {
+    latitude?: number;
     displayName: string;
+    longitude?: number;
     category: ServiceCategory;
 }
 export interface ProfessionalInfo {
+    latitude?: number;
     principal: Principal;
     displayName: string;
+    longitude?: number;
     category: ServiceCategory;
 }
 export interface PlatformStats {
@@ -103,6 +107,7 @@ export interface backendInterface {
     getCallerUserRole(): Promise<UserRole>;
     getMessages(bookingId: bigint): Promise<Array<ChatMessage>>;
     getMyBookings(): Promise<Array<Booking>>;
+    getNearbyTechnicians(): Promise<Array<ProfessionalInfo>>;
     getPlatformStats(): Promise<PlatformStats>;
     getServicesByCategory(category: ServiceCategory | null): Promise<Array<Service>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
@@ -120,4 +125,5 @@ export interface backendInterface {
     updateBookingStatus(bookingId: bigint, status: BookingStatus): Promise<void>;
     updateMobileNumber(mobileNumber: string): Promise<void>;
     updateService(serviceId: bigint, name: string, description: string, category: ServiceCategory, minPrice: bigint, maxPrice: bigint): Promise<void>;
+    updateTechnicianLocation(lat: number, lng: number): Promise<void>;
 }

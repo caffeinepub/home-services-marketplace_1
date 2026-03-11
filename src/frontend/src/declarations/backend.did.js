@@ -52,7 +52,9 @@ export const BrandingConfig = IDL.Record({
   'footerText' : IDL.Text,
 });
 export const ProfessionalProfile = IDL.Record({
+  'latitude' : IDL.Opt(IDL.Float64),
   'displayName' : IDL.Text,
+  'longitude' : IDL.Opt(IDL.Float64),
   'category' : ServiceCategory,
 });
 export const UserProfile = IDL.Record({
@@ -68,6 +70,13 @@ export const ChatMessage = IDL.Record({
   'timestamp' : IDL.Int,
   'senderRole' : IDL.Text,
 });
+export const ProfessionalInfo = IDL.Record({
+  'latitude' : IDL.Opt(IDL.Float64),
+  'principal' : IDL.Principal,
+  'displayName' : IDL.Text,
+  'longitude' : IDL.Opt(IDL.Float64),
+  'category' : ServiceCategory,
+});
 export const PlatformStats = IDL.Record({
   'totalProfessionals' : IDL.Nat,
   'totalBookings' : IDL.Nat,
@@ -82,11 +91,6 @@ export const Service = IDL.Record({
   'maxPrice' : IDL.Nat,
   'category' : ServiceCategory,
   'minPrice' : IDL.Nat,
-});
-export const ProfessionalInfo = IDL.Record({
-  'principal' : IDL.Principal,
-  'displayName' : IDL.Text,
-  'category' : ServiceCategory,
 });
 
 export const idlService = IDL.Service({
@@ -114,6 +118,7 @@ export const idlService = IDL.Service({
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getMessages' : IDL.Func([IDL.Nat], [IDL.Vec(ChatMessage)], ['query']),
   'getMyBookings' : IDL.Func([], [IDL.Vec(Booking)], ['query']),
+  'getNearbyTechnicians' : IDL.Func([], [IDL.Vec(ProfessionalInfo)], ['query']),
   'getPlatformStats' : IDL.Func([], [PlatformStats], ['query']),
   'getServicesByCategory' : IDL.Func(
       [IDL.Opt(ServiceCategory)],
@@ -143,6 +148,7 @@ export const idlService = IDL.Service({
       [],
       [],
     ),
+  'updateTechnicianLocation' : IDL.Func([IDL.Float64, IDL.Float64], [], []),
 });
 
 export const idlInitArgs = [];
@@ -192,7 +198,9 @@ export const idlFactory = ({ IDL }) => {
     'footerText' : IDL.Text,
   });
   const ProfessionalProfile = IDL.Record({
+    'latitude' : IDL.Opt(IDL.Float64),
     'displayName' : IDL.Text,
+    'longitude' : IDL.Opt(IDL.Float64),
     'category' : ServiceCategory,
   });
   const UserProfile = IDL.Record({
@@ -208,6 +216,13 @@ export const idlFactory = ({ IDL }) => {
     'timestamp' : IDL.Int,
     'senderRole' : IDL.Text,
   });
+  const ProfessionalInfo = IDL.Record({
+    'latitude' : IDL.Opt(IDL.Float64),
+    'principal' : IDL.Principal,
+    'displayName' : IDL.Text,
+    'longitude' : IDL.Opt(IDL.Float64),
+    'category' : ServiceCategory,
+  });
   const PlatformStats = IDL.Record({
     'totalProfessionals' : IDL.Nat,
     'totalBookings' : IDL.Nat,
@@ -222,11 +237,6 @@ export const idlFactory = ({ IDL }) => {
     'maxPrice' : IDL.Nat,
     'category' : ServiceCategory,
     'minPrice' : IDL.Nat,
-  });
-  const ProfessionalInfo = IDL.Record({
-    'principal' : IDL.Principal,
-    'displayName' : IDL.Text,
-    'category' : ServiceCategory,
   });
   
   return IDL.Service({
@@ -254,6 +264,11 @@ export const idlFactory = ({ IDL }) => {
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getMessages' : IDL.Func([IDL.Nat], [IDL.Vec(ChatMessage)], ['query']),
     'getMyBookings' : IDL.Func([], [IDL.Vec(Booking)], ['query']),
+    'getNearbyTechnicians' : IDL.Func(
+        [],
+        [IDL.Vec(ProfessionalInfo)],
+        ['query'],
+      ),
     'getPlatformStats' : IDL.Func([], [PlatformStats], ['query']),
     'getServicesByCategory' : IDL.Func(
         [IDL.Opt(ServiceCategory)],
@@ -283,6 +298,7 @@ export const idlFactory = ({ IDL }) => {
         [],
         [],
       ),
+    'updateTechnicianLocation' : IDL.Func([IDL.Float64, IDL.Float64], [], []),
   });
 };
 

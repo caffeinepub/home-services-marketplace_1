@@ -9,10 +9,11 @@ import {
 } from "@tanstack/react-router";
 import { Navbar } from "./components/Navbar";
 import { BrandingProvider, useBranding } from "./contexts/BrandingContext";
+import { AboutPage } from "./pages/AboutPage";
 import { AdminPanel } from "./pages/AdminPanel";
 import { AdminSetupPage } from "./pages/AdminSetupPage";
 import { CustomerDashboard } from "./pages/CustomerDashboard";
-import { DemoPage } from "./pages/DemoPage";
+import { DocsPage } from "./pages/DocsPage";
 import { LandingPage } from "./pages/LandingPage";
 import { PostLoginRouter } from "./pages/PostLoginRouter";
 import { ProfessionalDashboard } from "./pages/ProfessionalDashboard";
@@ -71,6 +72,12 @@ const servicesRoute = createRoute({
   component: ServicesPage,
 });
 
+const aboutRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/about",
+  component: AboutPage,
+});
+
 const postLoginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/post-login",
@@ -101,16 +108,16 @@ const adminPanelRoute = createRoute({
   component: AdminPanel,
 });
 
-const demoRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/demo",
-  component: DemoPage,
-});
-
 const adminSetupRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/admin-setup",
   component: AdminSetupPage,
+});
+
+const docsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/docs",
+  component: DocsPage,
 });
 
 const catchAllRoute = createRoute({
@@ -122,13 +129,14 @@ const catchAllRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   landingRoute,
   servicesRoute,
+  aboutRoute,
   postLoginRoute,
   registrationRoute,
   customerDashboardRoute,
   professionalDashboardRoute,
   adminPanelRoute,
-  demoRoute,
   adminSetupRoute,
+  docsRoute,
   catchAllRoute,
 ]);
 

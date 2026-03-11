@@ -22,6 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
   AlertCircle,
@@ -31,6 +32,7 @@ import {
   Loader2,
   MapPin,
   MessageCircle,
+  Navigation,
   PackageOpen,
   PlusCircle,
   Star,
@@ -39,9 +41,13 @@ import { motion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { type Booking, BookingStatus, type Service } from "../backend.d";
+import type { ProfessionalInfo } from "../backend.d";
 import { ChatDialog } from "../components/ChatDialog";
+import { NearbyTechniciansMap } from "../components/NearbyTechniciansMap";
 import { StatusBadge } from "../components/StatusBadge";
 import { useBranding } from "../contexts/BrandingContext";
+import { useActor } from "../hooks/useActor";
+import { useGeolocation } from "../hooks/useGeolocation";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
   useCancelBooking,
@@ -473,6 +479,18 @@ export function CustomerDashboard() {
   const { identity } = useInternetIdentity();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("upcoming");
+  const geo = useGeolocation();
+  const { actor, isFetching } = useActor();
+  const { data: nearbyTechnicians = [], refetch: refetchNearby } = useQuery<
+    ProfessionalInfo[]
+  >({
+    queryKey: ["nearbyTechnicians"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getNearbyTechnicians();
+    },
+    enabled: !!actor && !isFetching,
+  });
 
   const { data: bookings, isLoading, isError } = useMyBookings();
   const { data: services } = useListServices();
@@ -582,6 +600,14 @@ export function CustomerDashboard() {
                   </span>
                 )}
               </TabsTrigger>
+              <TabsTrigger
+                value="nearby"
+                className="rounded-lg flex items-center gap-1.5"
+                data-ocid="customer.nearby.tab"
+              >
+                <MapPin className="w-3.5 h-3.5" />
+                Find Nearby
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="upcoming">
@@ -647,6 +673,165 @@ export function CustomerDashboard() {
                       showReview={true}
                     />
                   ))
+                )}
+              </div>
+            </TabsContent>
+            <TabsContent value="nearby" data-ocid="customer.nearby.panel">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+                    {geo.loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" /> Detecting
+                        your location...
+                      </>
+                    ) : geo.error ? (
+                      <>
+                        <AlertCircle className="w-4 h-4 text-destructive" />{" "}
+                        {geo.error}
+                      </>
+                    ) : geo.lat != null ? (
+                      <>
+                        <MapPin className="w-4 h-4 text-primary" /> Location
+                        detected ({geo.lat.toFixed(4)}, {geo.lng?.toFixed(4)})
+                      </>
+                    ) : (
+                      "Detecting location..."
+                    )}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      geo.refresh();
+                      void refetchNearby();
+                    }}
+                    data-ocid="customer.nearby.secondary_button"
+                    className="gap-2"
+                  >
+                    <Navigation className="w-3.5 h-3.5" /> Refresh Location
+                  </Button>
+                </div>
+
+                {/* Map */}
+                <div
+                  className="h-[480px] rounded-xl overflow-hidden shadow-md border border-border"
+                  data-ocid="customer.nearby.card"
+                >
+                  <NearbyTechniciansMap
+                    userLat={geo.lat}
+                    userLng={geo.lng}
+                    technicians={nearbyTechnicians}
+                    onBookNow={() => void navigate({ to: "/services" })}
+                  />
+                </div>
+
+                {/* Sorted list */}
+                {nearbyTechnicians.filter((t) => t.latitude != null).length ===
+                0 ? (
+                  <div
+                    className="flex flex-col items-center gap-3 py-12 text-center"
+                    data-ocid="customer.nearby.empty_state"
+                  >
+                    <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center">
+                      <MapPin className="w-7 h-7 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">
+                        No technicians with location set
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Technicians need to enable location sharing from their
+                        dashboard.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <h3 className="font-display font-semibold text-sm text-foreground mb-3">
+                      Nearby Technicians (
+                      {
+                        nearbyTechnicians.filter((t) => t.latitude != null)
+                          .length
+                      }
+                      )
+                    </h3>
+                    <div
+                      className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+                      data-ocid="customer.nearby.list"
+                    >
+                      {nearbyTechnicians
+                        .filter(
+                          (t) => t.latitude != null && t.longitude != null,
+                        )
+                        .map((tech, i) => {
+                          const dist =
+                            geo.lat != null &&
+                            geo.lng != null &&
+                            tech.latitude != null &&
+                            tech.longitude != null
+                              ? (() => {
+                                  const R = 6371;
+                                  const dLat =
+                                    ((tech.latitude - geo.lat) * Math.PI) / 180;
+                                  const dLng =
+                                    ((tech.longitude - geo.lng) * Math.PI) /
+                                    180;
+                                  const a =
+                                    Math.sin(dLat / 2) ** 2 +
+                                    Math.cos((geo.lat * Math.PI) / 180) *
+                                      Math.cos(
+                                        (tech.latitude * Math.PI) / 180,
+                                      ) *
+                                      Math.sin(dLng / 2) ** 2;
+                                  return (
+                                    R *
+                                    2 *
+                                    Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+                                  );
+                                })()
+                              : null;
+                          return (
+                            <motion.div
+                              key={tech.principal.toString()}
+                              initial={{ opacity: 0, y: 8 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: i * 0.05 }}
+                              className="rounded-xl border border-border bg-card p-4 space-y-3"
+                              data-ocid={`customer.nearby.item.${i + 1}`}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <div className="font-semibold text-sm text-foreground">
+                                    {tech.displayName}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground mt-0.5">
+                                    {tech.category}
+                                  </div>
+                                </div>
+                                {dist != null && (
+                                  <span className="text-xs font-medium px-2 py-1 bg-primary/10 text-primary rounded-full whitespace-nowrap">
+                                    {dist < 1
+                                      ? `${Math.round(dist * 1000)}m`
+                                      : `${dist.toFixed(1)}km`}
+                                  </span>
+                                )}
+                              </div>
+                              <Button
+                                size="sm"
+                                className="w-full"
+                                onClick={() =>
+                                  void navigate({ to: "/services" })
+                                }
+                                data-ocid={`customer.nearby.book_button.${i + 1}`}
+                              >
+                                Book Service
+                              </Button>
+                            </motion.div>
+                          );
+                        })}
+                    </div>
+                  </div>
                 )}
               </div>
             </TabsContent>

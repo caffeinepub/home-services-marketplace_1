@@ -1,60 +1,26 @@
-# Lepzo — Computer Sales & Services Marketplace
+# Lepzo
 
 ## Current State
-
-The app has a working backend with these data stores:
-- Users (principal → UserProfile with role, professional info, mobile)
-- Services (id → Service with name, category, price range)
-- Bookings (id → Booking with customer, service, date, status, assigned professional)
-- Messages (id → ChatMessage per booking)
-- BookingHistory (principal → booking count)
-- BrandingConfig (site-wide branding)
-
-Frontend has: Landing page, Services page, Customer Dashboard, Professional Kanban Dashboard, Admin Panel (Overview, Services, Bookings, Customers, Technicians, Branding tabs), In-app Chat, Booking Calendar, Service Comparison.
+Lepzo is a full-stack IT services marketplace with Admin, Customer, and Technician roles. Current routes include /demo (DemoPage), and there is no About/Contact page. Technicians can self-register without any admin review step. The demo route was removed from the navbar but the page/route still exists in the codebase.
 
 ## Requested Changes (Diff)
 
 ### Add
-
-**Backend tables:**
-1. **Reviews** — Customer can submit a review (rating 1-5, comment) for a completed booking. One review per booking.
-2. **Payments** — Payment record created when a booking is completed or when customer confirms payment. Fields: id, bookingId, customer, amount, status (pending/paid/refunded), createdAt.
-3. **Admin table** — Already handled via AccessControl. Admin profile stores display name and contact email for the admin panel header.
-
-**Backend functions:**
-- `submitReview(bookingId, rating, comment)` — customer only, booking must be completed
-- `getReviewsForService(serviceId)` — public
-- `getReviewsForProfessional(professional)` — public
-- `createPayment(bookingId, amount)` — system creates when booking confirmed
-- `updatePaymentStatus(paymentId, status)` — admin only
-- `getPaymentsForBooking(bookingId)` — user/admin
-- `getAllPayments()` — admin only
-
-**Frontend:**
-- Review form shown in Customer Dashboard after a booking is completed (star rating + comment)
-- Reviews panel shown on Service detail cards (average rating, review count)
-- Payments tab in Admin Panel — lists all payments, admin can mark as paid/refunded
-- Customer Dashboard shows payment status for each booking
+- AboutPage: a new /about page with contact info, business hours, and FAQ section
+- Technician pending-review banner: after a technician registers, show a "pending admin review" banner in ProfessionalDashboard using localStorage flag; no backend changes
 
 ### Modify
-
-- `createBooking` — also creates a pending payment record automatically
-- Admin Panel — add Payments tab
-- Customer Dashboard — show rating widget for completed bookings, show payment status badge
-- Professional Dashboard — show average rating received
+- App.tsx: remove demoRoute and DemoPage import; add aboutRoute pointing to AboutPage
+- Navbar: add About link in desktop nav
+- RegistrationPage: set localStorage flag `lepzo_tech_pending` after professional registers
+- ProfessionalDashboard: read localStorage flag and show dismissible pending-review banner
 
 ### Remove
-
-Nothing removed.
+- DemoPage import and route from App.tsx (keep the file, just remove the route)
 
 ## Implementation Plan
-
-1. Add `Review` and `Payment` types to backend
-2. Add `reviews` and `payments` maps, `nextReviewId`, `nextPaymentId` counters
-3. Implement `submitReview`, `getReviewsForService`, `getReviewsForProfessional`
-4. Implement `createPayment` (internal + public), `updatePaymentStatus`, `getPaymentsForBooking`, `getAllPayments`
-5. Modify `createBooking` to auto-create a pending payment
-6. Update frontend: Reviews widget on customer dashboard completed bookings
-7. Update frontend: Payments tab in Admin Panel
-8. Update frontend: Service card average rating display
-9. Update frontend: Professional dashboard average rating earned
+1. Create src/frontend/src/pages/AboutPage.tsx with contact info, FAQ, business hours
+2. Modify App.tsx: remove demoRoute, add aboutRoute
+3. Modify Navbar.tsx: add About nav link
+4. Modify RegistrationPage.tsx: set localStorage flag after professional registration
+5. Modify ProfessionalDashboard.tsx: show dismissible pending-review banner if flag set

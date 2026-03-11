@@ -45,6 +45,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Principal } from "@dfinity/principal";
 import { useNavigate } from "@tanstack/react-router";
 import {
   AlertCircle,
@@ -65,6 +66,7 @@ import {
   Trash2,
   TrendingUp,
   UserCheck,
+  UserPlus,
   Users,
   Wrench,
   X,
@@ -77,7 +79,9 @@ import {
   BookingStatus,
   type Service,
   ServiceCategory,
+  UserRole,
 } from "../backend.d";
+import { useActor } from "../hooks/useActor";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
   formatPriceRange,
@@ -127,7 +131,8 @@ type AdminSection =
   | "users"
   | "technicians"
   | "branding"
-  | "database";
+  | "database"
+  | "admins";
 
 type ServiceFormData = {
   name: string;
@@ -2073,6 +2078,142 @@ function SidebarNavItem({
 }
 
 // ─── Admin Panel ───────────────────────────────────────────────────────────────
+
+// ─── AdminsSection ─────────────────────────────────────────────────────────────
+function AdminsSection() {
+  const { actor } = useActor();
+  const [principalId, setPrincipalId] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleGrant = async () => {
+    if (!principalId.trim()) {
+      toast.error("Please enter a Principal ID.");
+      return;
+    }
+    if (!actor) {
+      toast.error("Not connected to backend.");
+      return;
+    }
+    setLoading(true);
+    setSuccess(false);
+    setError("");
+    try {
+      const principal = Principal.fromText(principalId.trim());
+      await actor.assignCallerUserRole(principal, UserRole.admin);
+      setSuccess(true);
+      setPrincipalId("");
+      toast.success("Admin role granted successfully!");
+    } catch (e: any) {
+      const msg = e?.message ?? "Failed to grant admin role.";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-foreground">Manage Admins</h2>
+        <p className="text-muted-foreground mt-1">
+          Grant admin access to another user by their Principal ID.
+        </p>
+      </div>
+
+      <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4 flex gap-3">
+        <AlertCircle className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+        <p className="text-sm text-yellow-700 dark:text-yellow-400">
+          <strong>Warning:</strong> Admin role is permanent and gives full
+          access to the platform. Only grant this to trusted individuals.
+        </p>
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+        <div className="flex items-center gap-2 mb-2">
+          <Shield className="h-5 w-5 text-primary" />
+          <h3 className="font-semibold text-foreground">Grant Admin Role</h3>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          To find a user's Principal ID, ask them to visit the app, sign in, and
+          copy their Principal ID from their profile or the URL bar after
+          sign-in.
+        </p>
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="principalInput">Principal ID</Label>
+            <Input
+              id="principalInput"
+              data-ocid="admins.input"
+              placeholder="e.g. aaaaa-aa or xxxxx-xxxxx-xxxxx-cai"
+              value={principalId}
+              onChange={(e) => setPrincipalId(e.target.value)}
+              className="font-mono"
+            />
+          </div>
+          <Button
+            data-ocid="admins.submit_button"
+            onClick={handleGrant}
+            disabled={loading || !principalId.trim()}
+            className="w-full sm:w-auto"
+          >
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            ) : (
+              <UserPlus className="h-4 w-4 mr-2" />
+            )}
+            {loading ? "Granting…" : "Grant Admin Role"}
+          </Button>
+          {success && (
+            <div
+              data-ocid="admins.success_state"
+              className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400"
+            >
+              <ShieldCheck className="h-4 w-4" />
+              Admin role granted successfully!
+            </div>
+          )}
+          {error && (
+            <div
+              data-ocid="admins.error_state"
+              className="flex items-center gap-2 text-sm text-destructive"
+            >
+              <AlertCircle className="h-4 w-4" />
+              {error}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-6">
+        <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+          <Info className="h-4 w-4 text-muted-foreground" /> How It Works
+        </h3>
+        <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
+          <li>
+            Ask the person you want to make admin to sign in to Lepzo with
+            Internet Identity.
+          </li>
+          <li>
+            Have them copy their Principal ID (visible in their profile or
+            browser console via{" "}
+            <code className="bg-muted px-1 rounded">
+              identity.getPrincipal().toString()
+            </code>
+            ).
+          </li>
+          <li>Paste their Principal ID above and click "Grant Admin Role".</li>
+          <li>
+            They will have admin access immediately on their next page load.
+          </li>
+        </ol>
+      </div>
+    </div>
+  );
+}
+
 export function AdminPanel() {
   const { identity } = useInternetIdentity();
   const navigate = useNavigate();
@@ -2174,6 +2315,12 @@ export function AdminPanel() {
       icon: Database,
       ocid: "admin.sidebar.database_link",
     },
+    {
+      key: "admins",
+      label: "Admins",
+      icon: UserPlus,
+      ocid: "admin.sidebar.admins_link",
+    },
   ];
 
   return (
@@ -2259,6 +2406,8 @@ export function AdminPanel() {
                 {activeSection === "branding" && <BrandingManager />}
 
                 {activeSection === "database" && <DatabaseSchema />}
+
+                {activeSection === "admins" && <AdminsSection />}
               </motion.div>
             </AnimatePresence>
           </main>

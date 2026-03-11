@@ -1,6 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Loader2, LogIn, LogOut, Wrench } from "lucide-react";
+import {
+  BookOpen,
+  Info,
+  LayoutDashboard,
+  Loader2,
+  LogIn,
+  LogOut,
+  Wrench,
+} from "lucide-react";
 import { UserRole } from "../backend.d";
 import { useBranding } from "../contexts/BrandingContext";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
@@ -67,6 +75,22 @@ export function Navbar() {
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors [&.active]:text-primary [&.active]:font-semibold"
           >
             Browse Services
+          </Link>
+          <Link
+            to="/about"
+            data-ocid="nav.about_link"
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors [&.active]:text-primary [&.active]:font-semibold flex items-center gap-1.5"
+          >
+            <Info className="w-3.5 h-3.5" />
+            About
+          </Link>
+          <Link
+            to="/docs"
+            data-ocid="nav.docs_link"
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors [&.active]:text-primary [&.active]:font-semibold flex items-center gap-1.5"
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            Docs
           </Link>
         </div>
 

@@ -9,20 +9,75 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "@tanstack/react-router";
-import { Info, Loader2, LogIn, Shield } from "lucide-react";
-import { useState } from "react";
+import { CheckCircle, Info, Loader2, LogIn, Shield } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useActor } from "../hooks/useActor";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
+import { getPersistedUrlParameter } from "../utils/urlParams";
 
 export function AdminSetupPage() {
   const { identity, login, isLoggingIn } = useInternetIdentity();
-  const { actor } = useActor();
+  const { actor, isFetching } = useActor();
   const navigate = useNavigate();
 
   const [token, setToken] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [autoDetected, setAutoDetected] = useState(false);
+  const [autoTriggered, setAutoTriggered] = useState(false);
+  const [pendingSubmit, setPendingSubmit] = useState(false);
+
+  const claimAdmin = useCallback(
+    async (tokenValue: string) => {
+      if (!actor) return;
+      setIsSubmitting(true);
+      setErrorMessage("");
+      try {
+        await (
+          actor as unknown as {
+            _initializeAccessControlWithSecret: (t: string) => Promise<void>;
+          }
+        )._initializeAccessControlWithSecret(tokenValue.trim());
+        toast.success("Admin role claimed successfully! Redirecting…");
+        setTimeout(() => {
+          void navigate({ to: "/dashboard/admin" });
+        }, 1200);
+      } catch {
+        setErrorMessage(
+          "Token invalid or admin already assigned. Please sign in with the device you used to claim admin.",
+        );
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [actor, navigate],
+  );
+
+  // Auto-read token from URL on mount
+  useEffect(() => {
+    const urlToken = getPersistedUrlParameter("caffeineAdminToken");
+    if (urlToken) {
+      setToken(urlToken);
+      setAutoDetected(true);
+    }
+  }, []);
+
+  // Auto-submit when identity, actor, and auto-detected token are all ready
+  useEffect(() => {
+    if (autoDetected && identity && actor && token && !autoTriggered) {
+      setAutoTriggered(true);
+      void claimAdmin(token);
+    }
+  }, [autoDetected, identity, actor, token, autoTriggered, claimAdmin]);
+
+  // When actor becomes available after a pending submit, auto-proceed
+  useEffect(() => {
+    if (pendingSubmit && actor && !isFetching) {
+      setPendingSubmit(false);
+      void claimAdmin(token);
+    }
+  }, [pendingSubmit, actor, isFetching, token, claimAdmin]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,26 +86,24 @@ export function AdminSetupPage() {
       return;
     }
     if (!actor) {
-      setErrorMessage("Not connected to the backend. Please try again.");
+      if (isFetching) {
+        // Actor is still loading — queue submission
+        setPendingSubmit(true);
+        setErrorMessage("");
+      } else {
+        // Actor genuinely failed to load
+        setErrorMessage(
+          "Not connected to the backend. Please refresh the page and try again.",
+        );
+      }
       return;
     }
-    setIsSubmitting(true);
-    setErrorMessage("");
-    try {
-      // actor has _initializeAccessControlWithSecret available at runtime
-      await (
-        actor as unknown as {
-          _initializeAccessControlWithSecret: (token: string) => Promise<void>;
-        }
-      )._initializeAccessControlWithSecret(token.trim());
-      toast.success("Admin role claimed successfully!");
-      void navigate({ to: "/dashboard/admin" });
-    } catch {
-      setErrorMessage("Token invalid or admin already assigned.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    await claimAdmin(token);
   };
+
+  const isConnecting = !actor && isFetching;
+  const isButtonDisabled =
+    isSubmitting || !token.trim() || isConnecting || pendingSubmit;
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12">
@@ -74,18 +127,29 @@ export function AdminSetupPage() {
               Claim Admin Role
             </CardTitle>
             <CardDescription className="text-sm leading-relaxed">
-              Enter your admin setup token to claim the admin role. This only
-              works once — the first principal to use the correct token becomes
-              the permanent admin.
+              {autoDetected
+                ? "Admin token detected from your URL. Sign in below to automatically claim the admin role."
+                : "Enter your admin setup token to claim the admin role. This only works once."}
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Auto-detected token banner */}
+            {autoDetected && (
+              <div className="mb-4 flex items-center gap-2.5 p-3 rounded-lg bg-green-50 border border-green-200 dark:bg-green-950/30 dark:border-green-800/40">
+                <CheckCircle className="w-4 h-4 text-green-600 shrink-0" />
+                <p className="text-xs text-green-700 dark:text-green-400 font-medium">
+                  Admin token auto-detected from your URL
+                </p>
+              </div>
+            )}
+
             {!identity ? (
               /* Not signed in */
               <div className="space-y-4 text-center py-2">
                 <p className="text-sm text-muted-foreground">
-                  Please sign in with Internet Identity first before claiming
-                  admin access.
+                  {autoDetected
+                    ? "Almost there! Sign in with Internet Identity and you'll be made admin automatically."
+                    : "Please sign in with Internet Identity first before claiming admin access."}
                 </p>
                 <Button
                   data-ocid="admin_setup.login_button"
@@ -103,6 +167,14 @@ export function AdminSetupPage() {
                     : "Sign In with Internet Identity"}
                 </Button>
               </div>
+            ) : isSubmitting ? (
+              /* Auto-submitting */
+              <div className="flex flex-col items-center gap-3 py-6 text-center">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground">
+                  Claiming admin role…
+                </p>
+              </div>
             ) : (
               /* Signed in — show form */
               <form
@@ -110,6 +182,16 @@ export function AdminSetupPage() {
                 className="space-y-5"
                 data-ocid="admin_setup.dialog"
               >
+                {/* Connecting banner */}
+                {(isConnecting || pendingSubmit) && (
+                  <div className="flex items-center gap-2.5 p-3 rounded-lg bg-blue-50 border border-blue-200 dark:bg-blue-950/30 dark:border-blue-800/40">
+                    <Loader2 className="w-4 h-4 text-blue-600 animate-spin shrink-0" />
+                    <p className="text-xs text-blue-700 dark:text-blue-400 font-medium">
+                      Connecting to backend… will submit automatically.
+                    </p>
+                  </div>
+                )}
+
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="admin-token"
@@ -129,7 +211,7 @@ export function AdminSetupPage() {
                       setErrorMessage("");
                     }}
                     autoComplete="off"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || pendingSubmit}
                     className={errorMessage ? "border-destructive" : ""}
                   />
                   {errorMessage && (
@@ -146,10 +228,15 @@ export function AdminSetupPage() {
                   type="submit"
                   data-ocid="admin_setup.submit_button"
                   className="w-full gap-2"
-                  disabled={isSubmitting || !token.trim()}
+                  disabled={isButtonDisabled}
                   variant="destructive"
                 >
-                  {isSubmitting ? (
+                  {isConnecting || pendingSubmit ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Connecting…
+                    </>
+                  ) : isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
                       Claiming…
@@ -164,59 +251,53 @@ export function AdminSetupPage() {
               </form>
             )}
 
-            {/* Info note */}
-            <div className="mt-5 flex items-start gap-2.5 p-4 rounded-lg bg-muted/60 border border-border">
-              <Info className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  The Caffeine admin token is embedded in your app's preview URL
-                  as a query parameter:
-                </p>
-                <code className="block font-mono text-xs text-foreground bg-background border border-border px-3 py-2 rounded-md break-all leading-relaxed">
-                  https://your-app.icp0.io/?caffeineAdminToken=abc123...
-                </code>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Copy the value after{" "}
-                  <code className="font-mono text-foreground bg-background px-1 py-0.5 rounded text-xs">
-                    caffeineAdminToken=
-                  </code>{" "}
-                  and paste it above. This works{" "}
-                  <strong className="text-foreground">only once</strong> — the
-                  first principal to use the correct token becomes the permanent
-                  admin.
-                </p>
+            {/* Info note - only show if token NOT auto-detected */}
+            {!autoDetected && (
+              <div className="mt-5 flex items-start gap-2.5 p-4 rounded-lg bg-muted/60 border border-border">
+                <Info className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    The Caffeine admin token is embedded in your app's preview
+                    URL as a query parameter:
+                  </p>
+                  <code className="block font-mono text-xs text-foreground bg-background border border-border px-3 py-2 rounded-md break-all leading-relaxed">
+                    https://your-app.icp0.io/?caffeineAdminToken=abc123...
+                  </code>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Open the Caffeine preview link directly — it auto-fills your
+                    token on this page. Or copy the value after{" "}
+                    <code className="font-mono text-foreground bg-background px-1 py-0.5 rounded text-xs">
+                      caffeineAdminToken=
+                    </code>{" "}
+                    and paste it above.
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Internet Identity password note */}
+            {/* Internet Identity note */}
             <div className="mt-4 flex items-start gap-2.5 p-4 rounded-lg bg-blue-50 border border-blue-200 dark:bg-blue-950/30 dark:border-blue-800/40">
               <Shield className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
               <div className="space-y-1.5">
                 <p className="text-xs font-semibold text-blue-800 dark:text-blue-300">
-                  About Admin Passwords &amp; Internet Identity
+                  How admin login works
                 </p>
                 <ul className="space-y-1 text-xs text-blue-700 dark:text-blue-400 leading-relaxed list-disc list-inside">
-                  <li>
-                    Internet Identity uses <strong>cryptographic keys</strong>,
-                    not passwords — there is no password to change or reset.
-                  </li>
                   <li>
                     Your admin role is <strong>permanently tied</strong> to the
                     Internet Identity you used to claim it.
                   </li>
                   <li>
-                    To sign in as admin again: simply use the{" "}
-                    <strong>same device/browser</strong> you used to claim
-                    admin. Your identity is stored locally.
+                    To sign in as admin again: use the{" "}
+                    <strong>same device/browser</strong> where you first claimed
+                    admin.
                   </li>
                   <li>
-                    To access from a new device, use the{" "}
-                    <strong>"Add a new device"</strong> option in the Internet
-                    Identity management portal at{" "}
+                    To access from a new device, go to{" "}
                     <code className="font-mono bg-blue-100 dark:bg-blue-900/40 px-1 py-0.5 rounded text-[10px]">
                       identity.ic0.app
-                    </code>
-                    .
+                    </code>{" "}
+                    and use <strong>"Add a new device"</strong>.
                   </li>
                 </ul>
               </div>

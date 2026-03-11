@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
   AlertCircle,
@@ -10,17 +11,23 @@ import {
   Clock,
   DollarSign,
   Loader2,
+  MapPin,
   MessageCircle,
+  Navigation,
   PackageOpen,
   Play,
   User,
   Wrench,
+  X,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { type Booking, BookingStatus } from "../backend.d";
 import { ChatDialog } from "../components/ChatDialog";
+import { NearbyTechniciansMap } from "../components/NearbyTechniciansMap";
+import { useActor } from "../hooks/useActor";
+import { useGeolocation } from "../hooks/useGeolocation";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
   shortenPrincipal,
@@ -289,12 +296,120 @@ function KanbanColumn({
   );
 }
 
+// ─── My Location Section ──────────────────────────────────────────────────────
+interface MyLocationProps {
+  userProfile: import("../backend.d").UserProfile | null | undefined;
+}
+
+function MyLocationSection({ userProfile }: MyLocationProps) {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  const hasSavedLocation =
+    userProfile?.professional?.latitude != null &&
+    userProfile?.professional?.longitude != null;
+
+  const saveLocation = useMutation({
+    mutationFn: async ({ lat, lng }: { lat: number; lng: number }) => {
+      if (!actor) throw new Error("Not connected");
+      return actor.updateTechnicianLocation(lat, lng);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["user", "profile"] });
+      toast.success("Location saved! Customers can now find you on the map.");
+    },
+    onError: () => {
+      toast.error("Failed to save location. Please try again.");
+    },
+  });
+
+  const handleDetect = () => {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        void saveLocation.mutate({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+      },
+      () => {
+        toast.error(
+          "Location access denied. Please allow location in your browser.",
+        );
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  };
+
+  return (
+    <section data-ocid="professional.location.section">
+      <h2 className="font-display font-bold text-lg text-foreground mb-4 flex items-center gap-2">
+        <MapPin className="w-5 h-5 text-primary" />
+        My Location
+      </h2>
+      <div className="rounded-2xl border border-border bg-card p-6 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-foreground">
+              {hasSavedLocation ? "Location is set ✔" : "Location not set"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {hasSavedLocation
+                ? `Saved: ${userProfile?.professional?.latitude?.toFixed(4)}, ${userProfile?.professional?.longitude?.toFixed(4)}`
+                : "Customers can find you when you share your location. Your location helps customers book nearby technicians."}
+            </p>
+          </div>
+          <Button
+            onClick={handleDetect}
+            disabled={saveLocation.isPending}
+            data-ocid="professional.location.primary_button"
+            className="gap-2 shrink-0"
+          >
+            {saveLocation.isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" /> Saving...
+              </>
+            ) : (
+              <>
+                <Navigation className="w-4 h-4" /> Detect & Save My Location
+              </>
+            )}
+          </Button>
+        </div>
+        {hasSavedLocation && (
+          <div
+            className="h-[280px] rounded-xl overflow-hidden border border-border shadow-sm"
+            data-ocid="professional.location.card"
+          >
+            <NearbyTechniciansMap
+              userLat={userProfile?.professional?.latitude ?? null}
+              userLng={userProfile?.professional?.longitude ?? null}
+              technicians={[]}
+            />
+          </div>
+        )}
+        <p className="text-xs text-muted-foreground border-t border-border pt-3">
+          Your location is stored on-chain. Only visible to customers searching
+          for nearby technicians.
+        </p>
+      </div>
+    </section>
+  );
+}
+
 export function ProfessionalDashboard() {
   const { identity } = useInternetIdentity();
   const navigate = useNavigate();
   const { data: userProfile } = useUserProfile();
   const { data: bookings, isLoading, isError } = useAssignedBookings();
   const { data: services } = useListServices();
+
+  const [pendingBannerDismissed, setPendingBannerDismissed] = useState(
+    () => localStorage.getItem("lepzo_tech_pending") !== "1",
+  );
+
+  const handleDismissPendingBanner = () => {
+    localStorage.removeItem("lepzo_tech_pending");
+    setPendingBannerDismissed(true);
+  };
 
   if (!identity) {
     void navigate({ to: "/" });
@@ -384,6 +499,34 @@ export function ProfessionalDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Pending Review Banner */}
+      {!pendingBannerDismissed && (
+        <div
+          data-ocid="professional.pending_review.panel"
+          className="bg-amber-50 border-b border-amber-200"
+        >
+          <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                <Clock className="w-4 h-4 text-amber-600" />
+              </div>
+              <p className="text-sm text-amber-800 font-medium">
+                Your technician profile is under review. The admin will approve
+                your account before you start receiving jobs.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleDismissPendingBanner}
+              className="p-1.5 rounded-lg hover:bg-amber-100 transition-colors shrink-0"
+              aria-label="Dismiss notification"
+            >
+              <X className="w-4 h-4 text-amber-600" />
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="container mx-auto px-4 py-8 space-y-8">
         {/* Loading */}
@@ -528,6 +671,9 @@ export function ProfessionalDashboard() {
                 />
               </div>
             </section>
+
+            {/* My Location */}
+            <MyLocationSection userProfile={userProfile} />
           </>
         )}
       </div>

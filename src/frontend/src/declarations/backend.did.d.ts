@@ -54,12 +54,16 @@ export interface PlatformStats {
   'totalCompletedBookings' : bigint,
 }
 export interface ProfessionalInfo {
+  'latitude' : [] | [number],
   'principal' : Principal,
   'displayName' : string,
+  'longitude' : [] | [number],
   'category' : ServiceCategory,
 }
 export interface ProfessionalProfile {
+  'latitude' : [] | [number],
   'displayName' : string,
+  'longitude' : [] | [number],
   'category' : ServiceCategory,
 }
 export interface Service {
@@ -104,6 +108,7 @@ export interface _SERVICE {
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getMessages' : ActorMethod<[bigint], Array<ChatMessage>>,
   'getMyBookings' : ActorMethod<[], Array<Booking>>,
+  'getNearbyTechnicians' : ActorMethod<[], Array<ProfessionalInfo>>,
   'getPlatformStats' : ActorMethod<[], PlatformStats>,
   'getServicesByCategory' : ActorMethod<
     [[] | [ServiceCategory]],
@@ -127,6 +132,7 @@ export interface _SERVICE {
     [bigint, string, string, ServiceCategory, bigint, bigint],
     undefined
   >,
+  'updateTechnicianLocation' : ActorMethod<[number, number], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

@@ -7,6 +7,8 @@ import Runtime "mo:core/Runtime";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
+
+
 actor {
   public type UserRole = AccessControl.UserRole;
 
@@ -59,6 +61,8 @@ actor {
   public type ProfessionalProfile = {
     displayName : Text;
     category : ServiceCategory;
+    latitude : ?Float;
+    longitude : ?Float;
   };
 
   public type UserProfile = {
@@ -79,6 +83,8 @@ actor {
     principal : Principal;
     displayName : Text;
     category : ServiceCategory;
+    latitude : ?Float;
+    longitude : ?Float;
   };
 
   public type CustomerInfo = {
@@ -217,6 +223,8 @@ actor {
       professional = ?{
         displayName;
         category;
+        latitude = null;
+        longitude = null;
       };
       mobileNumber = null;
     };
@@ -719,6 +727,8 @@ actor {
             principal;
             displayName = professional.displayName;
             category = professional.category;
+            latitude = professional.latitude;
+            longitude = professional.longitude;
           });
         };
         case (null) {};
@@ -800,5 +810,59 @@ actor {
         result.toArray();
       };
     };
+  };
+
+  public shared ({ caller }) func updateTechnicianLocation(lat : Float, lng : Float) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can update location");
+    };
+
+    switch (users.get(caller)) {
+      case (null) { Runtime.trap("Caller not registered") };
+      case (?profile) {
+        switch (profile.professional) {
+          case (null) { Runtime.trap("Only professionals can update location") };
+          case (?professional) {
+            let updatedProfessional = {
+              professional with
+              latitude = ?lat;
+              longitude = ?lng;
+            };
+
+            let updatedProfile = {
+              profile with professional = ?updatedProfessional;
+            };
+
+            users.add(caller, updatedProfile);
+          };
+        };
+      };
+    };
+  };
+
+  public query ({ caller }) func getNearbyTechnicians() : async [ProfessionalInfo] {
+    let result = List.empty<ProfessionalInfo>();
+
+    for ((principal, userProfile) in users.entries()) {
+      switch (userProfile.professional) {
+        case (?professional) {
+          switch (professional.latitude, professional.longitude) {
+            case (?_, ?_) {
+              result.add({
+                principal;
+                displayName = professional.displayName;
+                category = professional.category;
+                latitude = professional.latitude;
+                longitude = professional.longitude;
+              });
+            };
+            case (_) {};
+          };
+        };
+        case (null) {};
+      };
+    };
+
+    result.toArray();
   };
 };
